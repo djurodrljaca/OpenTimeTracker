@@ -13,42 +13,38 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "UserInfo.hpp"
-#include <cstdint>
+#include "UserGroupInfo.hpp"
 
 using namespace OpenTimeTracker::Server;
 
-UserInfo::UserInfo()
+UserGroupInfo::UserGroupInfo()
     : m_id(-1LL),
-      m_name(),
-      m_password()
+      m_name()
 {
 }
 
-UserInfo::UserInfo(const UserInfo &other)
+UserGroupInfo::UserGroupInfo(const UserGroupInfo &other)
     : m_id(other.m_id),
-      m_name(other.m_name),
-      m_password(other.m_password)
+      m_name(other.m_name)
 {
 }
 
-UserInfo &UserInfo::operator =(const UserInfo &other)
+UserGroupInfo &UserGroupInfo::operator =(const UserGroupInfo &other)
 {
     if (this != &other)
     {
         m_id = other.m_id;
         m_name = other.m_name;
-        m_password = other.m_password;
     }
 
     return *this;
 }
 
-bool UserInfo::isValid() const
+bool UserGroupInfo::isValid() const
 {
     bool valid = true;
 
-    if ((m_id < 0) || m_name.isEmpty() || m_password.isEmpty())
+    if ((m_id < 0) || m_name.isEmpty())
     {
         valid = false;
     }
@@ -56,32 +52,22 @@ bool UserInfo::isValid() const
     return valid;
 }
 
-qint64 UserInfo::id() const
+qint64 UserGroupInfo::id() const
 {
     return m_id;
 }
 
-void UserInfo::setId(const qint64 &newId)
+void UserGroupInfo::setId(const qint64 &newId)
 {
     m_id = newId;
 }
 
-QString UserInfo::name() const
+QString UserGroupInfo::name() const
 {
     return m_name;
 }
 
-void UserInfo::setName(const QString &newName)
+void UserGroupInfo::setName(const QString &newName)
 {
     m_name = newName;
-}
-
-QString UserInfo::password() const
-{
-    return m_password;
-}
-
-void UserInfo::setPassword(const QString &newPassword)
-{
-    m_password = newPassword;
 }

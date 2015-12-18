@@ -14,10 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <QCoreApplication>
+#include <QtDebug>
+#include "Database.hpp"
+
+using namespace OpenTimeTracker::Server;
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+
+    Database database;
+    bool success = database.open("test.db");
+
+    qDebug() << "main: success:" << success;
 
     return a.exec();
 }

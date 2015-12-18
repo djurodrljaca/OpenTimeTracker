@@ -13,8 +13,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENTIMETRACKER_SERVER_USERINFO_HPP
-#define OPENTIMETRACKER_SERVER_USERINFO_HPP
+#ifndef OPENTIMETRACKER_SERVER_USERGROUPINFO_HPP
+#define OPENTIMETRACKER_SERVER_USERGROUPINFO_HPP
 
 #include <QtCore/QString>
 
@@ -24,21 +24,21 @@ namespace Server
 {
 
 /*!
- * \brief   Holds user's information
+ * \brief   Holds user group's information
  */
-class UserInfo
+class UserGroupInfo
 {
 public:
     /*!
      * \brief   Constructor
      */
-    UserInfo();
+    UserGroupInfo();
 
     /*!
      * \brief   Copy constructor
      * \param   other   Object to be copied
      */
-    UserInfo(const UserInfo &other);
+    UserGroupInfo(const UserGroupInfo &other);
 
     /*!
      * \brief   operator =
@@ -46,7 +46,7 @@ public:
      *
      * \return  Reference to the this object
      */
-    UserInfo &operator =(const UserInfo &other);
+    UserGroupInfo &operator =(const UserGroupInfo &other);
 
     /*!
      * \brief   Checks if object is valid
@@ -57,65 +57,46 @@ public:
     bool isValid() const;
 
     /*!
-     * \brief   Gets user's ID
+     * \brief   Gets user group's ID
      *
-     * \return  User's ID
+     * \return  User group's ID
      */
     qint64 id() const;
 
     /*!
-     * \brief   Sets user's new ID
+     * \brief   Sets user group's new ID
      *
-     * \param   newId   User's new ID
+     * \param   newId   User group's new ID
      */
     void setId(const qint64 &newId);
 
     /*!
-     * \brief   Gets user's name
+     * \brief   Gets user group's name
      *
-     * \return  User's name
+     * \return  User group's name
      */
     QString name() const;
 
     /*!
-     * \brief   Sets user's new name
+     * \brief   Sets user group's new name
      *
-     * \param   newName     User's new name
+     * \param   newName     User group's new name
      */
     void setName(const QString &newName);
 
-    /*!
-     * \brief   Gets user's password
-     *
-     * \return  User's password
-     */
-    QString password() const;
-
-    /*!
-     * \brief   Sets user's new password
-     *
-     * \param   newPassword     User's new password
-     */
-    void setPassword(const QString &newPassword);
-
 private:
     /*!
-     * \brief   Holds the user's ID
+     * \brief   Holds the user group's ID
      */
     qint64 m_id;
 
     /*!
-     * \brief   Holds the user's name
+     * \brief   Holds the user group's name
      */
     QString m_name;
-
-    /*!
-     * \brief   Holds the user's password
-     */
-    QString m_password;
 };
 
 }
 }
 
-#endif // OPENTIMETRACKER_SERVER_USERINFO_HPP
+#endif // OPENTIMETRACKER_SERVER_USERGROUPINFO_HPP
