@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/Database/Tables">
+    <qresource prefix="/">
         <file>Database/Tables/Users.sql</file>
     </qresource>
 </RCC>

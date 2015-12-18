@@ -87,6 +87,14 @@ private:
     qint32 readVersion(bool *success = NULL);
 
     /*!
+     * \brief   Writes the database version to the database
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool writeVersion();
+
+    /*!
      * \brief   Reads a pragma's value
      *
      * \param       pragmaName  Name of the pragma
@@ -95,6 +103,17 @@ private:
      * \return  Pragma's value
      */
     QVariant readPragmaValue(const QString &pragmaName, bool *success = NULL);
+
+    /*!
+     * \brief   Reads a pragma's value
+     *
+     * \param   pragmaName  Name of the pragma
+     * \param   pragmaValue Value to write to the pragma
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool writePragmaValue(const QString &pragmaName, const QVariant &pragmaValue);
 
     /*!
      * \brief   Creates a table

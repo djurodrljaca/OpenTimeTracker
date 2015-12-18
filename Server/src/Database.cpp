@@ -18,6 +18,7 @@
 #include <QtSql/QSqlError>
 #include <QtDebug>
 #include <QtCore/QFile>
+#include <QtCore/QDir>
 
 using namespace OpenTimeTracker::Server;
 
@@ -130,6 +131,14 @@ bool Database::initialize()
     {
         // Create table: Users
         success = createTable(QStringLiteral("Users"));
+
+        // TODO: implement
+
+        // Write the database version
+        if (success)
+        {
+            success = writeVersion();
+        }
     }
 
     return success;
@@ -166,6 +175,18 @@ qint32 Database::readVersion(bool *success)
     return version;
 }
 
+bool Database::writeVersion()
+{
+    bool success = false;
+
+    if (isOpen())
+    {
+        success = writePragmaValue(QStringLiteral("user_version"), m_version);
+    }
+
+    return success;
+}
+
 QVariant Database::readPragmaValue(const QString &pragmaName, bool *success)
 {
     // Initialize output values
@@ -182,7 +203,7 @@ QVariant Database::readPragmaValue(const QString &pragmaName, bool *success)
         // Execute query
         QSqlQuery query(m_database);
 
-        if (query.exec(QStringLiteral("PRAGMA ") + pragmaName))
+        if (query.exec(QString("PRAGMA %1;").arg(pragmaName)))
         {
             if (query.next())
             {
@@ -193,8 +214,6 @@ QVariant Database::readPragmaValue(const QString &pragmaName, bool *success)
                 {
                     *success = pragmaValue.isValid();
                 }
-
-                qDebug() << "Database::readPragmaValue: pragmaValue:" << pragmaValue;
             }
         }
         else
@@ -207,13 +226,46 @@ QVariant Database::readPragmaValue(const QString &pragmaName, bool *success)
     return pragmaValue;
 }
 
+bool Database::writePragmaValue(const QString &pragmaName, const QVariant &pragmaValue)
+{
+    bool success = false;
+
+    if (isOpen() && (pragmaName.isEmpty() == false) && pragmaValue.isValid())
+    {
+        // Execute query
+        QSqlQuery query(m_database);
+
+        success = query.exec(QString("PRAGMA %1=%2;").arg(pragmaName, pragmaValue.toString()));
+    }
+
+    return success;
+}
+
 bool Database::createTable(const QString &tableName)
 {
     bool success = false;
 
-    if (tableName.isEmpty() == false)
+    if (isOpen() && (tableName.isEmpty() == false))
     {
-        QString command = QFile::readAll(QStringLiteral(":/Database/Tables"));
+        // Read SQL command
+        QFile commandFile(QString(":/Database/Tables/%1.sql").arg(tableName));
+
+        if (commandFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            QString command = QString::fromUtf8(commandFile.readAll());
+
+            // Create table with the SQL command
+            QSqlQuery query(m_database);
+
+            if (query.exec(command))
+            {
+                success = true;
+            }
+        }
+        else
+        {
+            qDebug() << "Database::createTable: open error:" << commandFile.errorString();
+        }
     }
     // TODO: implement
     return success;
