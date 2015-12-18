@@ -3,10 +3,11 @@ TEMPLATE = app
 QT += qml quick
 CONFIG += c++11
 
-SOURCES += main.cpp \
-    UserInfo.cpp
+SOURCES += \
+    src/main.cpp \
+    src/UserInfo.cpp
 
-RESOURCES += qml.qrc
+RESOURCES += qml/qml.qrc
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
@@ -15,4 +16,4 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 HEADERS += \
-    UserInfo.hpp
+    src/UserInfo.hpp
