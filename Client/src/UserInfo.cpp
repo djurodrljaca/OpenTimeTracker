@@ -1,0 +1,52 @@
+/* Copyright 2015  Djuro Drljaca <djurodrljaca@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "UserInfo.hpp"
+
+UserInfo::UserInfo()
+{
+
+}
+
+qint64 UserInfo::id() const
+{
+    return m_id;
+}
+
+void UserInfo::setId(const qint64 &id)
+{
+    m_id = id;
+}
+
+QString UserInfo::name() const
+{
+    return m_name;
+}
+
+void UserInfo::setName(const QString &name)
+{
+    m_name = name;
+}
+
+QString UserInfo::password() const
+{
+    return m_password;
+}
+
+void UserInfo::setPassword(const QString &password)
+{
+    m_password = password;
+}
