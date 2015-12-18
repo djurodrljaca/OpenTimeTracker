@@ -9,4 +9,8 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-SOURCES += src/main.cpp
+SOURCES += src/main.cpp \
+    src/UserInfo.cpp
+
+HEADERS += \
+    src/UserInfo.hpp
