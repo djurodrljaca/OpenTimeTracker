@@ -20,3 +20,33 @@ UserInfo::UserInfo()
 {
 
 }
+
+qint64 UserInfo::id() const
+{
+    return m_id;
+}
+
+void UserInfo::setId(const qint64 &id)
+{
+    m_id = id;
+}
+
+QString UserInfo::name() const
+{
+    return m_name;
+}
+
+void UserInfo::setName(const QString &name)
+{
+    m_name = name;
+}
+
+QString UserInfo::password() const
+{
+    return m_password;
+}
+
+void UserInfo::setPassword(const QString &password)
+{
+    m_password = password;
+}
