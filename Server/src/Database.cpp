@@ -19,6 +19,7 @@
 #include <QtDebug>
 #include <QtCore/QFile>
 #include <QtCore/QDir>
+#include <QtCore/QRegularExpression>
 
 using namespace OpenTimeTracker::Server;
 
@@ -123,6 +124,127 @@ void Database::close()
     }
 }
 
+bool Database::addUser(const QString &name, const QString &password)
+{
+    bool success = false;
+
+    if (isOpen())
+    {
+        // Read command
+        const QString command = readSqlCommand(QStringLiteral("Users/Add.sql"));
+
+        // Execute command
+        if (command.isEmpty() == false)
+        {
+            QMap<QString, QVariant> values;
+            values[":name"] = name;
+            values[":password"] = password;
+            values[":enabled"] = 1;
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    return success;
+}
+
+QList<UserInfo> Database::readUsers()
+{
+    QList<UserInfo> userList;
+
+    if (isOpen())
+    {
+        // Read command
+        const QString command = readSqlCommand(QStringLiteral("Users/ReadAll.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            bool success = false;
+            QSqlQuery query(m_database);
+
+            if (query.prepare(command))
+            {
+                success = query.exec();
+            }
+
+            // Get all users from the query
+            if (success)
+            {
+                while (query.next())
+                {
+                    UserInfo user;
+
+                    // Get user ID
+                    QVariant value = query.value("id");
+
+                    if (value.canConvert<qint64>())
+                    {
+                        user.setId(value.toLongLong(&success));
+                    }
+                    else
+                    {
+                        success = false;
+                    }
+
+                    // Get user name
+                    if (success)
+                    {
+                        value = query.value("name");
+
+                        if (value.canConvert<QString>())
+                        {
+                            user.setName(value.toString());
+                        }
+                        else
+                        {
+                            success = false;
+                        }
+                    }
+
+                    // Get user password
+                    if (success)
+                    {
+                        value = query.value("password");
+
+                        if (value.canConvert<QString>())
+                        {
+                            user.setPassword(value.toString());
+                        }
+                        else
+                        {
+                            success = false;
+                        }
+                    }
+
+                    // Get user enabled state
+                    if (success)
+                    {
+                        value = query.value("enabled");
+
+                        if (value.canConvert<bool>())
+                        {
+                            user.setEnabled(value.toBool());
+                        }
+                        else
+                        {
+                            success = false;
+                        }
+                    }
+
+                    // Add user to list
+                    if (success && user.isValid())
+                    {
+                        userList.append(user);
+                    }
+                }
+            }
+        }
+    }
+
+    return userList;
+}
+
 bool Database::initialize()
 {
     bool success = false;
@@ -132,7 +254,19 @@ bool Database::initialize()
         // Create table: Users
         success = createTable(QStringLiteral("Users"));
 
-        // TODO: implement
+        // Create table: UserGroups
+        if (success)
+        {
+            success = createTable(QStringLiteral("UserGroups"));
+        }
+
+        // Create table: UserMapping
+        if (success)
+        {
+            success = createTable(QStringLiteral("UserMapping"));
+        }
+
+        // TODO: implement creation of the rest of the tables
 
         // Write the database version
         if (success)
@@ -241,32 +375,81 @@ bool Database::writePragmaValue(const QString &pragmaName, const QVariant &pragm
     return success;
 }
 
+QString Database::readSqlCommand(const QString &commandPath) const
+{
+    QString commandText;
+
+    if (commandPath.isEmpty() == false)
+    {
+        // Read SQL command
+        QFile file(QStringLiteral(":/Database/") + commandPath);
+
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            // Read the command text from the file
+            commandText = QString::fromUtf8(file.readAll());
+        }
+    }
+
+    return commandText;
+}
+
+bool Database::executeSqlCommand(const QString &command, const QMap<QString, QVariant> &values)
+{
+    bool success = false;
+
+    if (isOpen() && (command.isEmpty() == false))
+    {
+        // Prepare SQL command
+        QSqlQuery query(m_database);
+
+        if (query.prepare(command))
+        {
+            // Bind all needed values
+            success = true;
+            const QMap<QString, QVariant> boundValues = query.boundValues();
+
+            foreach (const QString &key, boundValues.keys())
+            {
+                if (values.contains(key))
+                {
+                    // Bind value
+                    query.bindValue(key, values[key]);
+                }
+                else
+                {
+                    // Error, missing value
+                    success = false;
+                    break;
+                }
+            }
+        }
+
+        // Execute SQL command
+        if (success)
+        {
+            success = query.exec();
+        }
+    }
+
+    return success;
+}
+
 bool Database::createTable(const QString &tableName)
 {
     bool success = false;
 
     if (isOpen() && (tableName.isEmpty() == false))
     {
-        // Read SQL command
-        QFile commandFile(QString(":/Database/Tables/%1.sql").arg(tableName));
+        // Read command
+        const QString command = readSqlCommand(QString("%1/CreateTable.sql").arg(tableName));
 
-        if (commandFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        // Execute command
+        if (command.isEmpty() == false)
         {
-            QString command = QString::fromUtf8(commandFile.readAll());
-
-            // Create table with the SQL command
-            QSqlQuery query(m_database);
-
-            if (query.exec(command))
-            {
-                success = true;
-            }
-        }
-        else
-        {
-            qDebug() << "Database::createTable: open error:" << commandFile.errorString();
+            success = executeSqlCommand(command);
         }
     }
-    // TODO: implement
+
     return success;
 }

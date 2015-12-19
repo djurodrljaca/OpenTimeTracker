@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/">
-        <file>Database/Tables/Users.sql</file>
+        <file>Database/UserGroups/CreateTable.sql</file>
+        <file>Database/UserMapping/CreateTable.sql</file>
+        <file>Database/Users/CreateTable.sql</file>
+        <file>Database/Users/Add.sql</file>
+        <file>Database/Users/ReadAll.sql</file>
     </qresource>
 </RCC>

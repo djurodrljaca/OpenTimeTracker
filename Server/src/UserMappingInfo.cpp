@@ -13,38 +13,41 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "UserGroupInfo.hpp"
+#include "UserMappingInfo.hpp"
 
 using namespace OpenTimeTracker::Server;
 
-UserGroupInfo::UserGroupInfo()
+UserMappingInfo::UserMappingInfo()
     : m_id(-1LL),
-      m_name()
+      m_userGroupId(-1LL),
+      m_userId(-1LL)
 {
 }
 
-UserGroupInfo::UserGroupInfo(const UserGroupInfo &other)
+UserMappingInfo::UserMappingInfo(const UserMappingInfo &other)
     : m_id(other.m_id),
-      m_name(other.m_name)
+      m_userGroupId(other.m_userGroupId),
+      m_userId(other.m_userId)
 {
 }
 
-UserGroupInfo &UserGroupInfo::operator =(const UserGroupInfo &other)
+UserMappingInfo &UserMappingInfo::operator =(const UserMappingInfo &other)
 {
     if (this != &other)
     {
         m_id = other.m_id;
-        m_name = other.m_name;
+        m_userGroupId = other.m_userGroupId;
+        m_userId = other.m_userId;
     }
 
     return *this;
 }
 
-bool UserGroupInfo::isValid() const
+bool UserMappingInfo::isValid() const
 {
     bool valid = true;
 
-    if ((m_id < 0) || m_name.isEmpty())
+    if ((m_id < 0) || (m_userGroupId < 0) || (m_userId < 0))
     {
         valid = false;
     }
@@ -52,32 +55,22 @@ bool UserGroupInfo::isValid() const
     return valid;
 }
 
-qint64 UserGroupInfo::id() const
+qint64 UserMappingInfo::userGroupId() const
 {
-    return m_id;
+    return m_userGroupId;
 }
 
-void UserGroupInfo::setId(const qint64 &newId)
+void UserMappingInfo::setUserGroupId(const qint64 &newUserGroupId)
 {
-    m_id = newId;
+    m_userGroupId = newUserGroupId;
 }
 
-QString UserGroupInfo::name() const
+qint64 UserMappingInfo::userId() const
 {
-    return m_name;
+    return m_userId;
 }
 
-void UserGroupInfo::setName(const QString &newName)
+void UserMappingInfo::setUserId(const qint64 &newUserId)
 {
-    m_name = newName;
-}
-
-bool UserGroupInfo::isEnabled() const
-{
-    return m_enabled;
-}
-
-void UserGroupInfo::setEnabled(bool enabled)
-{
-    m_enabled = enabled;
+    m_userId = newUserId;
 }

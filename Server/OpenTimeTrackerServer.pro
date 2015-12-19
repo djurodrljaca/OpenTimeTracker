@@ -12,12 +12,14 @@ TEMPLATE = app
 SOURCES += src/main.cpp \
     src/UserInfo.cpp \
     src/UserGroupInfo.cpp \
-    src/Database.cpp
+    src/Database.cpp \
+    src/UserMappingInfo.cpp
 
 HEADERS += \
     src/UserInfo.hpp \
     src/UserGroupInfo.hpp \
-    src/Database.hpp
+    src/Database.hpp \
+    src/UserMappingInfo.hpp
 
 RESOURCES += \
     qrc/database.qrc

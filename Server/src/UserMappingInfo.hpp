@@ -13,10 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENTIMETRACKER_SERVER_USERINFO_HPP
-#define OPENTIMETRACKER_SERVER_USERINFO_HPP
+#ifndef OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
+#define OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
 
-#include <QtCore/QString>
+#include <QtCore/QtGlobal>
 
 namespace OpenTimeTracker
 {
@@ -24,21 +24,21 @@ namespace Server
 {
 
 /*!
- * \brief   Holds user's information
+ * \brief   Holds information for mapping users to user groups
  */
-class UserInfo
+class UserMappingInfo
 {
 public:
     /*!
      * \brief   Constructor
      */
-    UserInfo();
+    UserMappingInfo();
 
     /*!
      * \brief   Copy constructor
      * \param   other   Object to be copied
      */
-    UserInfo(const UserInfo &other);
+    UserMappingInfo(const UserMappingInfo &other);
 
     /*!
      * \brief   operator =
@@ -46,7 +46,7 @@ public:
      *
      * \return  Reference to the this object
      */
-    UserInfo &operator =(const UserInfo &other);
+    UserMappingInfo &operator =(const UserMappingInfo &other);
 
     /*!
      * \brief   Checks if object is valid
@@ -57,85 +57,65 @@ public:
     bool isValid() const;
 
     /*!
-     * \brief   Gets user's ID
+     * \brief   Gets user mapping ID
      *
-     * \return  User's ID
+     * \return  User mapping ID
      */
     qint64 id() const;
 
     /*!
-     * \brief   Sets user's new ID
+     * \brief   Sets user mapping new ID
      *
-     * \param   newId   User's new ID
+     * \param   newId   User mapping new ID
      */
     void setId(const qint64 &newId);
 
     /*!
-     * \brief   Gets user's name
+     * \brief   Gets user group ID
      *
-     * \return  User's name
+     * \return  User group ID
      */
-    QString name() const;
+    qint64 userGroupId() const;
 
     /*!
-     * \brief   Sets user's new name
+     * \brief   Sets new user group ID
      *
-     * \param   newName     User's new name
+     * \param   newUserGroupId  New user group ID
      */
-    void setName(const QString &newName);
+    void setUserGroupId(const qint64 &newUserGroupId);
 
     /*!
-     * \brief   Gets user's password
+     * \brief   Gets user ID
      *
-     * \return  User's password
+     * \return  User ID
      */
-    QString password() const;
+    qint64 userId() const;
 
     /*!
-     * \brief   Sets user's new password
+     * \brief   Sets new user ID
      *
-     * \param   newPassword     User's new password
+     * \param   newGroupId  New user ID
      */
-    void setPassword(const QString &newPassword);
-
-    /*!
-     * \brief   Checks if user is enabled in the system
-     *
-     * \retval  true    Enabled
-     * \retval  false   Not enabled
-     */
-    bool isEnabled() const;
-
-    /*!
-     * \brief   Sets enable state of the user in the system
-     *
-     * \param   enabled     New enable state
-     */
-    void setEnabled(bool enabled);
+    void setUserId(const qint64 &newUserId);
 
 private:
     /*!
-     * \brief   Holds the user's ID
+     * \brief   Holds the user mapping ID
      */
     qint64 m_id;
 
     /*!
-     * \brief   Holds the user's name
+     * \brief   Holds the user group ID
      */
-    QString m_name;
+    qint64 m_userGroupId;
 
     /*!
-     * \brief   Holds the user's password
+     * \brief   Holds the user ID
      */
-    QString m_password;
-
-    /*!
-     * \brief   Holds the flag if user is enabled in the system
-     */
-    bool m_enabled;
+    qint64 m_userId;
 };
 
 }
 }
 
-#endif // OPENTIMETRACKER_SERVER_USERINFO_HPP
+#endif // OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP

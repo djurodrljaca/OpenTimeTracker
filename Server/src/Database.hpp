@@ -18,6 +18,7 @@
 
 #include <QtSql/QSqlDatabase>
 #include <QtCore/QVariant>
+#include "UserInfo.hpp"
 
 namespace OpenTimeTracker
 {
@@ -64,6 +65,24 @@ public:
      * \brief   Closes the database
      */
     void close();
+
+    /*!
+     * \brief   Adds a new user to the system
+     *
+     * \param   name        User's name
+     * \param   password    User's password
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool addUser(const QString &name, const QString &password);
+
+    /*!
+     * \brief   Reads all users from the system
+     *
+     * \return  List of users
+     */
+    QList<UserInfo> readUsers();
 
 private:
     /*!
@@ -114,6 +133,29 @@ private:
      * \retval  false   Error
      */
     bool writePragmaValue(const QString &pragmaName, const QVariant &pragmaValue);
+
+    /*!
+     * \brief   Reads SQL commands from built-in resources
+     *
+     * \param   commandPath     Relative path to the to the SQL command resource
+     *
+     * \return  List of command texts
+     *
+     * The SQL command resources are located in path ":/Database/<Relative Path>".
+     */
+    QString readSqlCommand(const QString &commandPath) const;
+
+    /*!
+     * \brief   Executes SQL commands
+     *
+     * \param   commands    List of SQL commands
+     * \param   values      List of values that can be bound to the commands
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool executeSqlCommand(const QString &command,
+                           const QMap<QString, QVariant> &values = QMap<QString, QVariant>());
 
     /*!
      * \brief   Creates a table

@@ -26,7 +26,21 @@ int main(int argc, char *argv[])
     Database database;
     bool success = database.open("test.db");
 
-    qDebug() << "main: success:" << success;
+    if (success)
+    {
+        success = database.addUser("user1", "11");
+    }
+
+    if (success)
+    {
+        success = database.addUser("user2", "22");
+    }
+
+    QList<UserInfo> users;
+    if (success)
+    {
+        users = database.readUsers();
+    }
 
     return a.exec();
 }

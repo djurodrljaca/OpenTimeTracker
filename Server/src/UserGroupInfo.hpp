@@ -84,6 +84,21 @@ public:
      */
     void setName(const QString &newName);
 
+    /*!
+     * \brief   Checks if user group is enabled in the system
+     *
+     * \retval  true    Enabled
+     * \retval  false   Not enabled
+     */
+    bool isEnabled() const;
+
+    /*!
+     * \brief   Sets enable state of the user in the system
+     *
+     * \param   enabled     New enable state
+     */
+    void setEnabled(bool enabled);
+
 private:
     /*!
      * \brief   Holds the user group's ID
@@ -94,6 +109,11 @@ private:
      * \brief   Holds the user group's name
      */
     QString m_name;
+
+    /*!
+     * \brief   Holds the flag if user group is enabled in the system
+     */
+    bool m_enabled;
 };
 
 }

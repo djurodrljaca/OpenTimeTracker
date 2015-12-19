@@ -85,3 +85,13 @@ void UserInfo::setPassword(const QString &newPassword)
 {
     m_password = newPassword;
 }
+
+bool UserInfo::isEnabled() const
+{
+    return m_enabled;
+}
+
+void UserInfo::setEnabled(bool enabled)
+{
+    m_enabled = enabled;
+}
