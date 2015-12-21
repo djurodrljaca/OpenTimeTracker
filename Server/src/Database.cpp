@@ -26,112 +26,122 @@ using namespace OpenTimeTracker::Server;
 const qint32 Database::m_version = 1;
 
 Database::Database()
-    : m_database()
 {
 }
 
 Database::~Database()
 {
-    if (isOpen())
+    if (isConnected())
     {
-        close();
+        disconnect();
     }
 }
 
-bool Database::isOpen()
+bool Database::isConnected()
 {
-    return m_database.isOpen();
+    return QSqlDatabase::contains();
 }
 
-bool Database::open(const QString &databaseFilePath)
+bool Database::connect(const QString &databaseFilePath)
 {
     bool success = false;
-    bool databaseFileAlreadyExists = false;
 
-    // Check if the database connection needs to be opened
-    if (isOpen())
+    // Check if already connected
+    if (isConnected())
     {
-        // Error: database connection is already open
+        // Error, already connected
+    }
+    else if (databaseFilePath.isEmpty())
+    {
+        // Error, invalid database file path
     }
     else
     {
-        // Open the database
-        if (databaseFilePath.isEmpty() == false)
+        // First check if the database file already exists
+        const bool databseFileExists = QFile::exists(databaseFilePath);
+
+        // Connect to database (if it doesn't exist it will be created)
         {
-            // First check if the database file exists
-            databaseFileAlreadyExists = QFile::exists(databaseFilePath);
-
-            // Create the database connection and open it
-            m_database = QSqlDatabase::addDatabase("QSQLITE");
-            m_database.setDatabaseName(databaseFilePath);
-
-            success = m_database.open();
+            QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+            db.setDatabaseName(databaseFilePath);
+            success = db.open();
         }
-    }
-
-    // Check the database version
-    if (success)
-    {
-        const qint32 databaseVersion = readVersion(&success);
 
         if (success)
         {
-            if (databaseVersion == m_version)
+            if (!databseFileExists)
             {
-                // Latest supported database version detected
-                success = true;
+                // Database did not exist, initialize it
+                success = initialize();
             }
-            else if (databaseVersion == 0)
+            else
             {
-                // Clear the database if it already exists
-                if (databaseFileAlreadyExists)
-                {
-                    // Close the database, delete the database file and reopen the database
-                    m_database.close();
+                // Database already existed, check its version
+                const qint32 databaseVersion = readVersion();
 
+                if (databaseVersion == m_version)
+                {
+                    // Latest supported database version detected
+                    success = true;
+                }
+                else if (databaseVersion < 1)
+                {
+                    // Invalid version detected
+                    // Disconnect from the database
+                    disconnect();
+
+                    // Remove the database file
                     if (QFile::remove(databaseFilePath))
                     {
-                        success = m_database.open();
+                        QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+                        db.setDatabaseName(databaseFilePath);
+                        success = db.open();
                     }
                     else
                     {
                         // Error, failed to clear the database
                         success = false;
                     }
-                }
 
-                // Uninitialized database detected, initialize it
-                if (success)
+                    // Reinitialize the database
+                    if (success)
+                    {
+                        success = initialize();
+                    }
+                }
+                else
                 {
-                    success = initialize();
+                    // Error, unsupported version
                 }
             }
-            else
-            {
-                // Error, unsupported version
-            }
+        }
+
+        // In case of error disconnect from the database
+        if (!success)
+        {
+            disconnect();
         }
     }
 
     return success;
 }
 
-void Database::close()
+void Database::disconnect()
 {
-    if (isOpen())
+    if (isConnected())
     {
-        m_database.close();
+        QSqlDatabase::removeDatabase(QSqlDatabase::connectionNames().at(0));
     }
 }
 
-bool Database::addUser(const QString &name, const QString &password)
+bool Database::addUser(const QString &name, const QString &password, const bool enabled)
 {
     bool success = false;
 
-    if (isOpen())
+    if (isConnected())
     {
         // Read command
-        const QString command = readSqlCommand(QStringLiteral("Users/Add.sql"));
+        const QString command = readSqlCommandFromResource(QStringLiteral("Users/Add.sql"));
 
         // Execute command
         if (command.isEmpty() == false)
@@ -139,7 +149,7 @@ bool Database::addUser(const QString &name, const QString &password)
             QMap<QString, QVariant> values;
             values[":name"] = name;
             values[":password"] = password;
-            values[":enabled"] = 1;
+            values[":enabled"] = enabled;
 
             success = executeSqlCommand(command, values);
         }
@@ -148,94 +158,95 @@ bool Database::addUser(const QString &name, const QString &password)
     return success;
 }
 
-QList<UserInfo> Database::readUsers()
+QList<UserInfo> Database::readAllUsers(const bool enableState)
 {
     QList<UserInfo> userList;
 
-    if (isOpen())
+    if (isConnected())
     {
         // Read command
-        const QString command = readSqlCommand(QStringLiteral("Users/ReadAll.sql"));
+        const QString command = readSqlCommandFromResource(QStringLiteral("Users/ReadAll.sql"));
 
         if (command.isEmpty() == false)
         {
             // Execute SQL command
-            bool success = false;
-            QSqlQuery query(m_database);
+            QSqlQuery query;
 
             if (query.prepare(command))
             {
-                success = query.exec();
-            }
+                query.bindValue(QStringLiteral(":enabled"), enableState);
 
-            // Get all users from the query
-            if (success)
-            {
-                while (query.next())
+                if (query.exec())
                 {
-                    UserInfo user;
+                    // Get all users from the query
+                    bool success = false;
 
-                    // Get user ID
-                    QVariant value = query.value("id");
-
-                    if (value.canConvert<qint64>())
+                    while (query.next())
                     {
-                        user.setId(value.toLongLong(&success));
-                    }
-                    else
-                    {
-                        success = false;
-                    }
+                        UserInfo user;
 
-                    // Get user name
-                    if (success)
-                    {
-                        value = query.value("name");
+                        // Get user ID
+                        QVariant value = query.value("id");
 
-                        if (value.canConvert<QString>())
+                        if (value.canConvert<qint64>())
                         {
-                            user.setName(value.toString());
+                            user.setId(value.toLongLong(&success));
                         }
                         else
                         {
                             success = false;
                         }
-                    }
 
-                    // Get user password
-                    if (success)
-                    {
-                        value = query.value("password");
-
-                        if (value.canConvert<QString>())
+                        // Get user name
+                        if (success)
                         {
-                            user.setPassword(value.toString());
-                        }
-                        else
-                        {
-                            success = false;
-                        }
-                    }
+                            value = query.value("name");
 
-                    // Get user enabled state
-                    if (success)
-                    {
-                        value = query.value("enabled");
-
-                        if (value.canConvert<bool>())
-                        {
-                            user.setEnabled(value.toBool());
+                            if (value.canConvert<QString>())
+                            {
+                                user.setName(value.toString());
+                            }
+                            else
+                            {
+                                success = false;
+                            }
                         }
-                        else
-                        {
-                            success = false;
-                        }
-                    }
 
-                    // Add user to list
-                    if (success && user.isValid())
-                    {
-                        userList.append(user);
+                        // Get user password
+                        if (success)
+                        {
+                            value = query.value("password");
+
+                            if (value.canConvert<QString>())
+                            {
+                                user.setPassword(value.toString());
+                            }
+                            else
+                            {
+                                success = false;
+                            }
+                        }
+
+                        // Get user enabled state
+                        if (success)
+                        {
+                            value = query.value("enabled");
+
+                            if (value.canConvert<bool>())
+                            {
+                                user.setEnabled(value.toBool());
+                            }
+                            else
+                            {
+                                success = false;
+                            }
+                        }
+
+                        // Add user to list
+                        if (success && user.isValid())
+                        {
+                            userList.append(user);
+                        }
                     }
                 }
             }
@@ -249,7 +260,7 @@ bool Database::initialize()
 {
     bool success = false;
 
-    if (isOpen())
+    if (isConnected())
     {
         // Create table: Users
         success = createTable(QStringLiteral("Users"));
@@ -278,30 +289,21 @@ bool Database::initialize()
     return success;
 }
 
-qint32 Database::readVersion(bool *success)
+qint32 Database::readVersion()
 {
-    // Initialize output values
+    // Initialize the version to an invalid value
     qint32 version = 0;
 
-    if (success != NULL)
-    {
-        *success = false;
-    }
-
     // Read "user_version" pragma's value
-    bool readingSuccessfull = false;
-    const QVariant pragmaValue = readPragmaValue(QStringLiteral("user_version"),
-                                                 &readingSuccessfull);
-
-    if (readingSuccessfull && pragmaValue.isValid())
+    if(isConnected())
     {
-        if (pragmaValue.canConvert<qint32>())
-        {
-            version = pragmaValue.value<qint32>();
+        const QVariant pragmaValue = readPragmaValue(QStringLiteral("user_version"));
 
-            if (success != NULL)
+        if (pragmaValue.isValid())
+        {
+            if (pragmaValue.canConvert<qint32>())
             {
-                *success = true;
+                version = pragmaValue.value<qint32>();
             }
         }
     }
@@ -313,7 +315,7 @@ bool Database::writeVersion()
 {
     bool success = false;
 
-    if (isOpen())
+    if (isConnected())
     {
         success = writePragmaValue(QStringLiteral("user_version"), m_version);
     }
@@ -321,63 +323,48 @@ bool Database::writeVersion()
     return success;
 }
 
-QVariant Database::readPragmaValue(const QString &pragmaName, bool *success)
+QVariant Database::readPragmaValue(const QString &name)
 {
-    // Initialize output values
+    // Initialize pragma value to an invalid value
     QVariant pragmaValue;
 
-    if (success != NULL)
-    {
-        *success = false;
-    }
-
     // Read the pragma value
-    if (isOpen() && (pragmaName.isEmpty() == false))
+    if (isConnected() && (!name.isEmpty()))
     {
         // Execute query
-        QSqlQuery query(m_database);
+        QSqlQuery query;
 
-        if (query.exec(QString("PRAGMA %1;").arg(pragmaName)))
+        if (query.exec(QString("PRAGMA %1;").arg(name)))
         {
             if (query.next())
             {
-                // Convert the result to an integer (if possible)
+                // Read the pragma value
                 pragmaValue = query.value(0);
-
-                if (success != NULL)
-                {
-                    *success = pragmaValue.isValid();
-                }
             }
-        }
-        else
-        {
-            qDebug() << "Database::readPragmaValue: failed to read pragma:" << query.lastQuery()
-                     << query.lastError().text();
         }
     }
 
     return pragmaValue;
 }
 
-bool Database::writePragmaValue(const QString &pragmaName, const QVariant &pragmaValue)
+bool Database::writePragmaValue(const QString &name, const QVariant &value)
 {
     bool success = false;
 
-    if (isOpen() && (pragmaName.isEmpty() == false) && pragmaValue.isValid())
+    if (isConnected() && (!name.isEmpty()) && value.isValid())
     {
         // Execute query
-        QSqlQuery query(m_database);
+        QSqlQuery query;
 
-        success = query.exec(QString("PRAGMA %1=%2;").arg(pragmaName, pragmaValue.toString()));
+        success = query.exec(QString("PRAGMA %1=%2;").arg(name, value.toString()));
     }
 
     return success;
 }
 
-QString Database::readSqlCommand(const QString &commandPath) const
+QString Database::readSqlCommandFromResource(const QString &commandPath) const
 {
-    QString commandText;
+    QString command;
 
     if (commandPath.isEmpty() == false)
     {
@@ -387,21 +374,24 @@ QString Database::readSqlCommand(const QString &commandPath) const
         if (file.open(QIODevice::ReadOnly | QIODevice::Text))
         {
             // Read the command text from the file
-            commandText = QString::fromUtf8(file.readAll());
+            command = QString::fromUtf8(file.readAll());
         }
     }
 
-    return commandText;
+    return command;
 }
 
 bool Database::executeSqlCommand(const QString &command, const QMap<QString, QVariant> &values)
 {
     bool success = false;
 
-    if (isOpen() && (command.isEmpty() == false))
+    if (isConnected() && (!command.isEmpty()))
     {
+//        QSqlDatabase db = QSqlDatabase::database();
+//        qDebug() << db.databaseName();
+
         // Prepare SQL command
-        QSqlQuery query(m_database);
+        QSqlQuery query;
 
         if (query.prepare(command))
         {
@@ -439,10 +429,11 @@ bool Database::createTable(const QString &tableName)
 {
     bool success = false;
 
-    if (isOpen() && (tableName.isEmpty() == false))
+    if (isConnected() && (!tableName.isEmpty()))
     {
         // Read command
-        const QString command = readSqlCommand(QString("%1/CreateTable.sql").arg(tableName));
+        const QString command = readSqlCommandFromResource(tableName +
+                                                           QStringLiteral("/CreateTable.sql"));
 
         // Execute command
         if (command.isEmpty() == false)

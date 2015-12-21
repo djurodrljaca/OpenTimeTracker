@@ -44,45 +44,48 @@ public:
     ~Database();
 
     /*!
-     * \brief   Checks if database is open
+     * \brief   Checks if connected to a database
      *
-     * \retval  true    Database is open
-     * \retval  false   Database is not open
+     * \retval  true    Connected
+     * \retval  false   Disconnected
      */
-    bool isOpen();
+    bool isConnected();
 
     /*!
-     * \brief   Opens the database
+     * \brief   Connects to the database
      *
      * \param   databaseFilePath    Path to the database file
      *
      * \retval  true    Success
      * \retval  false   Error
      */
-    bool open(const QString &databaseFilePath);
+    bool connect(const QString &databaseFilePath);
 
     /*!
-     * \brief   Closes the database
+     * \brief   Disconnects the database
      */
-    void close();
+    void disconnect();
 
     /*!
      * \brief   Adds a new user to the system
      *
      * \param   name        User's name
      * \param   password    User's password
+     * \param   enabled     User's enable state
      *
      * \retval  true    Success
      * \retval  false   Error
      */
-    bool addUser(const QString &name, const QString &password);
+    bool addUser(const QString &name, const QString &password, const bool enabled = true);
 
     /*!
      * \brief   Reads all users from the system
      *
+     * \param   enableState     Filter users by their enable state
+     *
      * \return  List of users
      */
-    QList<UserInfo> readUsers();
+    QList<UserInfo> readAllUsers(const bool enableState = true);
 
 private:
     /*!
@@ -99,11 +102,12 @@ private:
     /*!
      * \brief   Reads the database's version
      *
-     * \param[out]  success     Optional execution status information
-     *
      * \return  Database's version
+     *
+     * \note    If the database version is less than "1" then the database is invalid. The database
+     *          file should be deleted and the database reinitialized.
      */
-    qint32 readVersion(bool *success = NULL);
+    qint32 readVersion();
 
     /*!
      * \brief   Writes the database version to the database
@@ -116,23 +120,22 @@ private:
     /*!
      * \brief   Reads a pragma's value
      *
-     * \param       pragmaName  Name of the pragma
-     * \param[out]  success     Optional execution status information
+     * \param   name    Name of the pragma
      *
      * \return  Pragma's value
      */
-    QVariant readPragmaValue(const QString &pragmaName, bool *success = NULL);
+    QVariant readPragmaValue(const QString &name);
 
     /*!
      * \brief   Reads a pragma's value
      *
-     * \param   pragmaName  Name of the pragma
-     * \param   pragmaValue Value to write to the pragma
+     * \param   name    Name of the pragma
+     * \param   value   Value to write to the pragma
      *
      * \retval  true    Success
      * \retval  false   Error
      */
-    bool writePragmaValue(const QString &pragmaName, const QVariant &pragmaValue);
+    bool writePragmaValue(const QString &name, const QVariant &value);
 
     /*!
      * \brief   Reads SQL commands from built-in resources
@@ -143,7 +146,7 @@ private:
      *
      * The SQL command resources are located in path ":/Database/<Relative Path>".
      */
-    QString readSqlCommand(const QString &commandPath) const;
+    QString readSqlCommandFromResource(const QString &commandPath) const;
 
     /*!
      * \brief   Executes SQL commands
@@ -166,11 +169,6 @@ private:
      * \retval  false   Error
      */
     bool createTable(const QString &tableName);
-
-    /*!
-     * \brief   Holds the database connection
-     */
-    QSqlDatabase m_database;
 
     /*!
      * \brief   Holds the database's version

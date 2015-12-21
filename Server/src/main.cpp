@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     Database database;
-    bool success = database.open("test.db");
+    bool success = database.connect("test.db");
 
     if (success)
     {
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     QList<UserInfo> users;
     if (success)
     {
-        users = database.readUsers();
+        users = database.readAllUsers();
     }
 
     return a.exec();

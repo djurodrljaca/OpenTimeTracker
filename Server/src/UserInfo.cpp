@@ -48,7 +48,10 @@ bool UserInfo::isValid() const
 {
     bool valid = true;
 
-    if ((m_id < 0) || m_name.isEmpty() || m_password.isEmpty())
+    if ((m_id < 0) ||
+        m_name.isEmpty() ||
+        (m_password.isEmpty() && m_enabled) ||
+        (!m_password.isEmpty() && !m_enabled))
     {
         valid = false;
     }
