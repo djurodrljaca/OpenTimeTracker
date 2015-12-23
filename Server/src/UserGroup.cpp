@@ -13,23 +13,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "UserGroupInfo.hpp"
+#include "UserGroup.hpp"
 
 using namespace OpenTimeTracker::Server;
 
-UserGroupInfo::UserGroupInfo()
+UserGroup::UserGroup()
     : m_id(0LL),
       m_name()
 {
 }
 
-UserGroupInfo::UserGroupInfo(const UserGroupInfo &other)
+UserGroup::UserGroup(const UserGroup &other)
     : m_id(other.m_id),
       m_name(other.m_name)
 {
 }
 
-UserGroupInfo &UserGroupInfo::operator =(const UserGroupInfo &other)
+UserGroup &UserGroup::operator =(const UserGroup &other)
 {
     if (this != &other)
     {
@@ -40,7 +40,7 @@ UserGroupInfo &UserGroupInfo::operator =(const UserGroupInfo &other)
     return *this;
 }
 
-bool UserGroupInfo::isValid() const
+bool UserGroup::isValid() const
 {
     bool valid = true;
 
@@ -52,29 +52,29 @@ bool UserGroupInfo::isValid() const
     return valid;
 }
 
-qint64 UserGroupInfo::id() const
+qint64 UserGroup::id() const
 {
     return m_id;
 }
 
-void UserGroupInfo::setId(const qint64 &newId)
+void UserGroup::setId(const qint64 &newId)
 {
     m_id = newId;
 }
 
-QString UserGroupInfo::name() const
+QString UserGroup::name() const
 {
     return m_name;
 }
 
-void UserGroupInfo::setName(const QString &newName)
+void UserGroup::setName(const QString &newName)
 {
     m_name = newName;
 }
 
-UserGroupInfo UserGroupInfo::fromMap(const QMap<QString, QVariant> &map)
+UserGroup UserGroup::fromMap(const QMap<QString, QVariant> &map)
 {
-    UserGroupInfo userGroup;
+    UserGroup userGroup;
 
     if (map.size() == 2)
     {
@@ -106,7 +106,7 @@ UserGroupInfo UserGroupInfo::fromMap(const QMap<QString, QVariant> &map)
         // On error clear the object
         if (!success)
         {
-            userGroup = UserGroupInfo();
+            userGroup = UserGroup();
         }
     }
 

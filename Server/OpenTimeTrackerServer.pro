@@ -10,20 +10,20 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += src/main.cpp \
-    src/UserInfo.cpp \
-    src/UserGroupInfo.cpp \
     src/Database.cpp \
-    src/UserMappingInfo.cpp \
     src/Event.cpp \
-    src/EventChangeLogItem.cpp
+    src/EventChangeLogItem.cpp \
+    src/UserGroup.cpp \
+    src/User.cpp \
+    src/UserMapping.cpp
 
 HEADERS += \
-    src/UserInfo.hpp \
-    src/UserGroupInfo.hpp \
     src/Database.hpp \
-    src/UserMappingInfo.hpp \
     src/Event.hpp \
-    src/EventChangeLogItem.hpp
+    src/EventChangeLogItem.hpp \
+    src/UserGroup.hpp \
+    src/User.hpp \
+    src/UserMapping.hpp
 
 RESOURCES += \
     qrc/database.qrc

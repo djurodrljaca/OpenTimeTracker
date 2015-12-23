@@ -13,8 +13,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENTIMETRACKER_SERVER_USERINFO_HPP
-#define OPENTIMETRACKER_SERVER_USERINFO_HPP
+#ifndef OPENTIMETRACKER_SERVER_USER_HPP
+#define OPENTIMETRACKER_SERVER_USER_HPP
 
 #include <QtCore/QMap>
 #include <QtCore/QString>
@@ -28,19 +28,19 @@ namespace Server
 /*!
  * \brief   Holds user's information
  */
-class UserInfo
+class User
 {
 public:
     /*!
      * \brief   Constructor
      */
-    UserInfo();
+    User();
 
     /*!
      * \brief   Copy constructor
      * \param   other   Object to be copied
      */
-    UserInfo(const UserInfo &other);
+    User(const User &other);
 
     /*!
      * \brief   operator =
@@ -48,7 +48,7 @@ public:
      *
      * \return  Reference to the this object
      */
-    UserInfo &operator =(const UserInfo &other);
+    User &operator =(const User &other);
 
     /*!
      * \brief   Checks if object is valid
@@ -110,7 +110,7 @@ public:
      * \note    Created object is invalid if the values in the map cannot be used to create a valid
      *          object.
      */
-    static UserInfo fromMap(const QMap<QString, QVariant> &map);
+    static User fromMap(const QMap<QString, QVariant> &map);
 
 private:
     /*!
@@ -132,4 +132,4 @@ private:
 }
 }
 
-#endif // OPENTIMETRACKER_SERVER_USERINFO_HPP
+#endif // OPENTIMETRACKER_SERVER_USER_HPP

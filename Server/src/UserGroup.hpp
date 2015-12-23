@@ -13,8 +13,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
-#define OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
+#ifndef OPENTIMETRACKER_SERVER_USERGROUP_HPP
+#define OPENTIMETRACKER_SERVER_USERGROUP_HPP
 
 #include <QtCore/QMap>
 #include <QtCore/QString>
@@ -26,21 +26,21 @@ namespace Server
 {
 
 /*!
- * \brief   Holds information for mapping users to user groups
+ * \brief   Holds user group's information
  */
-class UserMappingInfo
+class UserGroup
 {
 public:
     /*!
      * \brief   Constructor
      */
-    UserMappingInfo();
+    UserGroup();
 
     /*!
      * \brief   Copy constructor
      * \param   other   Object to be copied
      */
-    UserMappingInfo(const UserMappingInfo &other);
+    UserGroup(const UserGroup &other);
 
     /*!
      * \brief   operator =
@@ -48,7 +48,7 @@ public:
      *
      * \return  Reference to the this object
      */
-    UserMappingInfo &operator =(const UserMappingInfo &other);
+    UserGroup &operator =(const UserGroup &other);
 
     /*!
      * \brief   Checks if object is valid
@@ -59,77 +59,58 @@ public:
     bool isValid() const;
 
     /*!
-     * \brief   Gets user mapping ID
+     * \brief   Gets user group's ID
      *
-     * \return  User mapping ID
+     * \return  User group's ID
      */
     qint64 id() const;
 
     /*!
-     * \brief   Sets user mapping new ID
+     * \brief   Sets user group's new ID
      *
-     * \param   newId   User mapping new ID
+     * \param   newId   User group's new ID
      */
     void setId(const qint64 &newId);
 
     /*!
-     * \brief   Gets user group ID
+     * \brief   Gets user group's name
      *
-     * \return  User group ID
+     * \return  User group's name
      */
-    qint64 userGroupId() const;
+    QString name() const;
 
     /*!
-     * \brief   Sets new user group ID
+     * \brief   Sets user group's new name
      *
-     * \param   newUserGroupId  New user group ID
+     * \param   newName     User group's new name
      */
-    void setUserGroupId(const qint64 &newUserGroupId);
-
-    /*!
-     * \brief   Gets user ID
-     *
-     * \return  User ID
-     */
-    qint64 userId() const;
-
-    /*!
-     * \brief   Sets new user ID
-     *
-     * \param   newGroupId  New user ID
-     */
-    void setUserId(const qint64 &newUserId);
+    void setName(const QString &newName);
 
     /*!
      * \brief   Creates an object from a map
      *
-     * \param   map     Map that contains the user mapping values
+     * \param   map     Map that contains the user group values
      *
      * \return  A new object
      *
      * \note    Created object is invalid if the values in the map cannot be used to create a valid
      *          object.
      */
-    static UserMappingInfo fromMap(const QMap<QString, QVariant> &map);
+    static UserGroup fromMap(const QMap<QString, QVariant> &map);
 
 private:
     /*!
-     * \brief   Holds the user mapping ID
+     * \brief   Holds the user group's ID
      */
     qint64 m_id;
 
     /*!
-     * \brief   Holds the user group ID
+     * \brief   Holds the user group's name
      */
-    qint64 m_userGroupId;
-
-    /*!
-     * \brief   Holds the user ID
-     */
-    qint64 m_userId;
+    QString m_name;
 };
 
 }
 }
 
-#endif // OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
+#endif // OPENTIMETRACKER_SERVER_USERGROUP_HPP

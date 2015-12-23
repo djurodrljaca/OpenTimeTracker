@@ -164,9 +164,9 @@ bool Database::addUser(const QString &name, const QString &password)
     return success;
 }
 
-QList<UserInfo> Database::readAllUsers()
+QList<User> Database::readAllUsers()
 {
-    QList<UserInfo> users;
+    QList<User> users;
 
     if (isConnected())
     {
@@ -183,7 +183,7 @@ QList<UserInfo> Database::readAllUsers()
                 // Get all users from the query
                 for (int i = 0; i < results.size(); i++)
                 {
-                    UserInfo user = UserInfo::fromMap(results.at(i));
+                    User user = User::fromMap(results.at(i));
 
                     if (user.isValid())
                     {
@@ -226,9 +226,9 @@ bool Database::addUserGroup(const QString &name)
     return success;
 }
 
-QList<UserGroupInfo> Database::readAllUserGroups()
+QList<UserGroup> Database::readAllUserGroups()
 {
-    QList<UserGroupInfo> userGroups;
+    QList<UserGroup> userGroups;
 
     if (isConnected())
     {
@@ -246,7 +246,7 @@ QList<UserGroupInfo> Database::readAllUserGroups()
                 // Get all user groups from the query
                 for (int i = 0; i < results.size(); i++)
                 {
-                    UserGroupInfo userGroup = UserGroupInfo::fromMap(results.at(i));
+                    UserGroup userGroup = UserGroup::fromMap(results.at(i));
 
                     if (userGroup.isValid())
                     {
@@ -290,9 +290,9 @@ bool Database::addUserMapping(const qint64 &userGroupId, const qint64 &userId)
     return success;
 }
 
-QList<UserMappingInfo> Database::readAllUserMappings()
+QList<UserMapping> Database::readAllUserMappings()
 {
-    QList<UserMappingInfo> userMappings;
+    QList<UserMapping> userMappings;
 
     if (isConnected())
     {
@@ -310,7 +310,7 @@ QList<UserMappingInfo> Database::readAllUserMappings()
                 // Get all user mappings from the query
                 for (int i = 0; i < results.size(); i++)
                 {
-                    UserMappingInfo userMapping = UserMappingInfo::fromMap(results.at(i));
+                    UserMapping userMapping = UserMapping::fromMap(results.at(i));
 
                     if (userMapping.isValid())
                     {

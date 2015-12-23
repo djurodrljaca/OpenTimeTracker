@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
         success = database.addUser("user2", "22");
     }
 
-    QList<UserInfo> users;
+    QList<User> users;
     if (success)
     {
         users = database.readAllUsers();

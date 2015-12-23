@@ -13,26 +13,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "UserInfo.hpp"
+#include "User.hpp"
 #include <cstdint>
 
 using namespace OpenTimeTracker::Server;
 
-UserInfo::UserInfo()
+User::User()
     : m_id(0LL),
       m_name(),
       m_password()
 {
 }
 
-UserInfo::UserInfo(const UserInfo &other)
+User::User(const User &other)
     : m_id(other.m_id),
       m_name(other.m_name),
       m_password(other.m_password)
 {
 }
 
-UserInfo &UserInfo::operator =(const UserInfo &other)
+User &User::operator =(const User &other)
 {
     if (this != &other)
     {
@@ -44,7 +44,7 @@ UserInfo &UserInfo::operator =(const UserInfo &other)
     return *this;
 }
 
-bool UserInfo::isValid() const
+bool User::isValid() const
 {
     bool valid = true;
 
@@ -58,39 +58,39 @@ bool UserInfo::isValid() const
     return valid;
 }
 
-qint64 UserInfo::id() const
+qint64 User::id() const
 {
     return m_id;
 }
 
-void UserInfo::setId(const qint64 &newId)
+void User::setId(const qint64 &newId)
 {
     m_id = newId;
 }
 
-QString UserInfo::name() const
+QString User::name() const
 {
     return m_name;
 }
 
-void UserInfo::setName(const QString &newName)
+void User::setName(const QString &newName)
 {
     m_name = newName;
 }
 
-QString UserInfo::password() const
+QString User::password() const
 {
     return m_password;
 }
 
-void UserInfo::setPassword(const QString &newPassword)
+void User::setPassword(const QString &newPassword)
 {
     m_password = newPassword;
 }
 
-UserInfo UserInfo::fromMap(const QMap<QString, QVariant> &map)
+User User::fromMap(const QMap<QString, QVariant> &map)
 {
-    UserInfo user;
+    User user;
 
     if (map.size() == 3)
     {
@@ -137,7 +137,7 @@ UserInfo UserInfo::fromMap(const QMap<QString, QVariant> &map)
         // On error clear the object
         if (!success)
         {
-            user = UserInfo();
+            user = User();
         }
     }
 

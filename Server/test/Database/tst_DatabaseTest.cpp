@@ -142,7 +142,7 @@ void DatabaseTest::testCaseReadAllUsersEmptyDatabase()
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::UserInfo> users = database.readAllUsers();
+    QList<OpenTimeTracker::Server::User> users = database.readAllUsers();
 
     QVERIFY(users.isEmpty());
 }
@@ -205,7 +205,7 @@ void DatabaseTest::testCaseReadAllUsersNonEmptyDatabase()
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::UserInfo> users = database.readAllUsers();
+    QList<OpenTimeTracker::Server::User> users = database.readAllUsers();
 
     QCOMPARE(users.size(), 2);
 
@@ -224,7 +224,7 @@ void DatabaseTest::testCaseReadAllUserGroupsEmptyDatabase()
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::UserGroupInfo> userGroups = database.readAllUserGroups();
+    QList<OpenTimeTracker::Server::UserGroup> userGroups = database.readAllUserGroups();
 
     QVERIFY(userGroups.isEmpty());
 }
@@ -277,7 +277,7 @@ void DatabaseTest::testCaseReadAllUserGroupsNonEmptyDatabase()
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::UserGroupInfo> userGroups = database.readAllUserGroups();
+    QList<OpenTimeTracker::Server::UserGroup> userGroups = database.readAllUserGroups();
 
     QCOMPARE(userGroups.size(), 2);
 
@@ -294,7 +294,7 @@ void DatabaseTest::testCaseReadAllUserMappingsEmptyDatabase()
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::UserMappingInfo> userMappings = database.readAllUserMappings();
+    QList<OpenTimeTracker::Server::UserMapping> userMappings = database.readAllUserMappings();
 
     QVERIFY(userMappings.isEmpty());
 }
@@ -356,7 +356,7 @@ void DatabaseTest::testCaseReadAllUserMappingsNonEmptyDatabase()
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::UserMappingInfo> userMappings = database.readAllUserMappings();
+    QList<OpenTimeTracker::Server::UserMapping> userMappings = database.readAllUserMappings();
 
     QCOMPARE(userMappings.size(), 3);
 

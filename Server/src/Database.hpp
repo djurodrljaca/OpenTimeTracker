@@ -18,9 +18,9 @@
 
 #include <QtSql/QSqlDatabase>
 #include <QtCore/QVariant>
-#include "UserInfo.hpp"
-#include "UserGroupInfo.hpp"
-#include "UserMappingInfo.hpp"
+#include "User.hpp"
+#include "UserGroup.hpp"
+#include "UserMapping.hpp"
 
 namespace OpenTimeTracker
 {
@@ -84,7 +84,7 @@ public:
      *
      * \return  List of users
      */
-    QList<UserInfo> readAllUsers();
+    QList<User> readAllUsers();
 
     /*!
      * \brief   Adds a new user group to the system
@@ -101,7 +101,7 @@ public:
      *
      * \return  List of user groups
      */
-    QList<UserGroupInfo> readAllUserGroups();
+    QList<UserGroup> readAllUserGroups();
 
     /*!
      * \brief   Adds a new user mapping to the system
@@ -119,7 +119,7 @@ public:
      *
      * \return  List of user mappings
      */
-    QList<UserMappingInfo> readAllUserMappings();
+    QList<UserMapping> readAllUserMappings();
 
 private:
     /*!

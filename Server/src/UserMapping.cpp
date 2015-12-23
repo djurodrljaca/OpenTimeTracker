@@ -13,25 +13,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "UserMappingInfo.hpp"
+#include "UserMapping.hpp"
 
 using namespace OpenTimeTracker::Server;
 
-UserMappingInfo::UserMappingInfo()
+UserMapping::UserMapping()
     : m_id(0LL),
       m_userGroupId(0LL),
       m_userId(0LL)
 {
 }
 
-UserMappingInfo::UserMappingInfo(const UserMappingInfo &other)
+UserMapping::UserMapping(const UserMapping &other)
     : m_id(other.m_id),
       m_userGroupId(other.m_userGroupId),
       m_userId(other.m_userId)
 {
 }
 
-UserMappingInfo &UserMappingInfo::operator =(const UserMappingInfo &other)
+UserMapping &UserMapping::operator =(const UserMapping &other)
 {
     if (this != &other)
     {
@@ -43,7 +43,7 @@ UserMappingInfo &UserMappingInfo::operator =(const UserMappingInfo &other)
     return *this;
 }
 
-bool UserMappingInfo::isValid() const
+bool UserMapping::isValid() const
 {
     bool valid = true;
 
@@ -55,39 +55,39 @@ bool UserMappingInfo::isValid() const
     return valid;
 }
 
-qint64 UserMappingInfo::id() const
+qint64 UserMapping::id() const
 {
     return m_id;
 }
 
-void UserMappingInfo::setId(const qint64 &newId)
+void UserMapping::setId(const qint64 &newId)
 {
     m_id = newId;
 }
 
-qint64 UserMappingInfo::userGroupId() const
+qint64 UserMapping::userGroupId() const
 {
     return m_userGroupId;
 }
 
-void UserMappingInfo::setUserGroupId(const qint64 &newUserGroupId)
+void UserMapping::setUserGroupId(const qint64 &newUserGroupId)
 {
     m_userGroupId = newUserGroupId;
 }
 
-qint64 UserMappingInfo::userId() const
+qint64 UserMapping::userId() const
 {
     return m_userId;
 }
 
-void UserMappingInfo::setUserId(const qint64 &newUserId)
+void UserMapping::setUserId(const qint64 &newUserId)
 {
     m_userId = newUserId;
 }
 
-UserMappingInfo UserMappingInfo::fromMap(const QMap<QString, QVariant> &map)
+UserMapping UserMapping::fromMap(const QMap<QString, QVariant> &map)
 {
-    UserMappingInfo userMapping;
+    UserMapping userMapping;
 
     if (map.size() == 3)
     {
@@ -134,7 +134,7 @@ UserMappingInfo UserMappingInfo::fromMap(const QMap<QString, QVariant> &map)
         // On error clear the object
         if (!success)
         {
-            userMapping = UserMappingInfo();
+            userMapping = UserMapping();
         }
     }
 
