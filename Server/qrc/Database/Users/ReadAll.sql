@@ -1,2 +1,1 @@
-SELECT * FROM Users
-WHERE enabled = :enabled;
+SELECT * FROM Users;

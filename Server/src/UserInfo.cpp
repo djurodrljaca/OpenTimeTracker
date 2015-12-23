@@ -50,8 +50,7 @@ bool UserInfo::isValid() const
 
     if ((m_id < 0) ||
         m_name.isEmpty() ||
-        (m_password.isEmpty() && m_enabled) ||
-        (!m_password.isEmpty() && !m_enabled))
+        ((m_password.isNull() == false) && m_password.isEmpty()))
     {
         valid = false;
     }
@@ -89,12 +88,59 @@ void UserInfo::setPassword(const QString &newPassword)
     m_password = newPassword;
 }
 
-bool UserInfo::isEnabled() const
+UserInfo UserInfo::fromMap(const QMap<QString, QVariant> &map)
 {
-    return m_enabled;
-}
+    UserInfo user;
 
-void UserInfo::setEnabled(bool enabled)
-{
-    m_enabled = enabled;
+    if (map.size() == 3)
+    {
+        bool success = false;
+
+        // Get user ID
+        QVariant value = map["id"];
+
+        if (value.canConvert<qint64>())
+        {
+            user.setId(value.toLongLong(&success));
+            success = true;
+        }
+
+        // Get user name
+        if (success)
+        {
+            value = map["name"];
+
+            if (value.canConvert<QString>())
+            {
+                user.setName(value.toString());
+            }
+            else
+            {
+                success = false;
+            }
+        }
+
+        // Get user password
+        if (success)
+        {
+            value = map["password"];
+
+            if (value.canConvert<QString>())
+            {
+                user.setPassword(value.toString());
+            }
+            else
+            {
+                success = false;
+            }
+        }
+
+        // On error clear the object
+        if (!success)
+        {
+            user = UserInfo();
+        }
+    }
+
+    return user;
 }

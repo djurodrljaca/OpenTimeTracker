@@ -14,8 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Database.hpp"
-#include <QtSql/QSqlQuery>
 #include <QtSql/QSqlError>
+#include <QtSql/QSqlQuery>
+#include <QtSql/QSqlRecord>
 #include <QtDebug>
 #include <QtCore/QFile>
 #include <QtCore/QDir>
@@ -130,11 +131,11 @@ void Database::disconnect()
 {
     if (isConnected())
     {
-        QSqlDatabase::removeDatabase(QSqlDatabase::connectionNames().at(0));
+        QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
     }
 }
 
-bool Database::addUser(const QString &name, const QString &password, const bool enabled)
+bool Database::addUser(const QString &name, const QString &password)
 {
     bool success = false;
 
@@ -149,7 +150,6 @@ bool Database::addUser(const QString &name, const QString &password, const bool 
             QMap<QString, QVariant> values;
             values[":name"] = name;
             values[":password"] = password;
-            values[":enabled"] = enabled;
 
             success = executeSqlCommand(command, values);
         }
@@ -158,7 +158,7 @@ bool Database::addUser(const QString &name, const QString &password, const bool 
     return success;
 }
 
-QList<UserInfo> Database::readAllUsers(const bool enableState)
+QList<UserInfo> Database::readAllUsers()
 {
     QList<UserInfo> userList;
 
@@ -170,83 +170,25 @@ QList<UserInfo> Database::readAllUsers(const bool enableState)
         if (command.isEmpty() == false)
         {
             // Execute SQL command
-            QSqlQuery query;
+            QList<QMap<QString, QVariant> > results;
 
-            if (query.prepare(command))
+            if (executeSqlCommand(command, QMap<QString, QVariant>(), &results))
             {
-                query.bindValue(QStringLiteral(":enabled"), enableState);
-
-                if (query.exec())
+                // Get all users from the query
+                for (int i = 0; i < results.size(); i++)
                 {
-                    // Get all users from the query
-                    bool success = false;
+                    UserInfo user = UserInfo::fromMap(results.at(i));
 
-                    while (query.next())
+                    if (user.isValid())
                     {
-                        UserInfo user;
-
-                        // Get user ID
-                        QVariant value = query.value("id");
-
-                        if (value.canConvert<qint64>())
-                        {
-                            user.setId(value.toLongLong(&success));
-                        }
-                        else
-                        {
-                            success = false;
-                        }
-
-                        // Get user name
-                        if (success)
-                        {
-                            value = query.value("name");
-
-                            if (value.canConvert<QString>())
-                            {
-                                user.setName(value.toString());
-                            }
-                            else
-                            {
-                                success = false;
-                            }
-                        }
-
-                        // Get user password
-                        if (success)
-                        {
-                            value = query.value("password");
-
-                            if (value.canConvert<QString>())
-                            {
-                                user.setPassword(value.toString());
-                            }
-                            else
-                            {
-                                success = false;
-                            }
-                        }
-
-                        // Get user enabled state
-                        if (success)
-                        {
-                            value = query.value("enabled");
-
-                            if (value.canConvert<bool>())
-                            {
-                                user.setEnabled(value.toBool());
-                            }
-                            else
-                            {
-                                success = false;
-                            }
-                        }
-
                         // Add user to list
-                        if (success && user.isValid())
-                        {
-                            userList.append(user);
-                        }
+                        userList.append(user);
+                    }
+                    else
+                    {
+                        // On error stop reading the results and clear them
+                        userList.clear();
+                        break;
                     }
                 }
             }
@@ -381,15 +323,34 @@ QString Database::readSqlCommandFromResource(const QString &commandPath) const
     return command;
 }
 
-bool Database::executeSqlCommand(const QString &command, const QMap<QString, QVariant> &values)
+QStringList Database::readSqlCommandsFromResource(const QString &commandPath) const
+{
+    QStringList commands;
+
+    if (commandPath.isEmpty() == false)
+    {
+        // Read SQL commands
+        QFile file(QStringLiteral(":/Database/") + commandPath);
+
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            // Read the command text from the file
+            commands = QString::fromUtf8(file.readAll()).split(QRegularExpression("\\s*;\\s*"),
+                                                               QString::SkipEmptyParts);
+        }
+    }
+
+    return commands;
+}
+
+bool Database::executeSqlCommand(const QString &command,
+                                 const QMap<QString, QVariant> &values,
+                                 QList<QMap<QString, QVariant> > *results)
 {
     bool success = false;
 
     if (isConnected() && (!command.isEmpty()))
     {
-//        QSqlDatabase db = QSqlDatabase::database();
-//        qDebug() << db.databaseName();
-
         // Prepare SQL command
         QSqlQuery query;
 
@@ -419,6 +380,34 @@ bool Database::executeSqlCommand(const QString &command, const QMap<QString, QVa
         if (success)
         {
             success = query.exec();
+
+            if (query.isSelect() && (results != NULL))
+            {
+                // Read the results
+                const QSqlRecord record = query.record();
+                results->clear();
+
+                if (record.isEmpty())
+                {
+                    // At least one field was expected
+                    success = false;
+                }
+                else
+                {
+                    while (query.next())
+                    {
+                        QMap<QString, QVariant> result;
+
+                        for (int i = 0; i < record.count(); i++)
+                        {
+                            // Add values to the the result for the selected column
+                            result[record.fieldName(i)] = query.value(i);
+                        }
+
+                        results->append(result);
+                    }
+                }
+            }
         }
     }
 
@@ -432,13 +421,21 @@ bool Database::createTable(const QString &tableName)
     if (isConnected() && (!tableName.isEmpty()))
     {
         // Read command
-        const QString command = readSqlCommandFromResource(tableName +
-                                                           QStringLiteral("/CreateTable.sql"));
+        const QStringList commands = readSqlCommandsFromResource(
+                                         tableName + QStringLiteral("/CreateTable.sql"));
 
         // Execute command
-        if (command.isEmpty() == false)
+        if (commands.isEmpty() == false)
         {
-            success = executeSqlCommand(command);
+            foreach (const QString &command, commands)
+            {
+                success = executeSqlCommand(command);
+
+                if (!success)
+                {
+                    break;
+                }
+            }
         }
     }
 

@@ -71,21 +71,18 @@ public:
      *
      * \param   name        User's name
      * \param   password    User's password
-     * \param   enabled     User's enable state
      *
      * \retval  true    Success
      * \retval  false   Error
      */
-    bool addUser(const QString &name, const QString &password, const bool enabled = true);
+    bool addUser(const QString &name, const QString &password);
 
     /*!
      * \brief   Reads all users from the system
      *
-     * \param   enableState     Filter users by their enable state
-     *
      * \return  List of users
      */
-    QList<UserInfo> readAllUsers(const bool enableState = true);
+    QList<UserInfo> readAllUsers();
 
 private:
     /*!
@@ -138,6 +135,17 @@ private:
     bool writePragmaValue(const QString &name, const QVariant &value);
 
     /*!
+     * \brief   Reads SQL command from built-in resources
+     *
+     * \param   commandPath     Relative path to the to the SQL command resource
+     *
+     * \return  Command text
+     *
+     * The SQL command resources are located in path ":/Database/<Relative Path>".
+     */
+    QString readSqlCommandFromResource(const QString &commandPath) const;
+
+    /*!
      * \brief   Reads SQL commands from built-in resources
      *
      * \param   commandPath     Relative path to the to the SQL command resource
@@ -146,19 +154,23 @@ private:
      *
      * The SQL command resources are located in path ":/Database/<Relative Path>".
      */
-    QString readSqlCommandFromResource(const QString &commandPath) const;
+    QStringList readSqlCommandsFromResource(const QString &commandPath) const;
 
     /*!
-     * \brief   Executes SQL commands
+     * \brief   Executes SQL command
      *
-     * \param   commands    List of SQL commands
-     * \param   values      List of values that can be bound to the commands
+     * \param   commands    SQL command
+     * \param   values      List of values that can be bound to the command
+     * \param   results     Optional results of the executed command
      *
      * \retval  true    Success
      * \retval  false   Error
+     *
+     * \note    Only SELECT statements can produce results
      */
     bool executeSqlCommand(const QString &command,
-                           const QMap<QString, QVariant> &values = QMap<QString, QVariant>());
+                           const QMap<QString, QVariant> &values = QMap<QString, QVariant>(),
+                           QList<QMap<QString, QVariant> > *results = NULL);
 
     /*!
      * \brief   Creates a table

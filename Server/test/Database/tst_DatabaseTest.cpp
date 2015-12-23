@@ -33,13 +33,14 @@ private Q_SLOTS:
     void testCaseDisconnect();
     void testCaseReconnect();
 
+    void testCaseReadAllUsersEmptyDatabase();
+
     void testCaseAddUser_data();
     void testCaseAddUser();
     void testCaseAddUserFail_data();
     void testCaseAddUserFail();
 
-    void testCaseReadAllEnabledUsers();
-    void testCaseReadAllDisabledUsers();
+    void testCaseReadAllUsersNonEmptyDatabase();
 
 private:
     QString m_databaseFilePath;
@@ -62,7 +63,7 @@ void DatabaseTest::cleanupTestCase()
 {
     if (QFile::exists(m_databaseFilePath))
     {
-        //QVERIFY2(QFile::remove(m_databaseFilePath), "Database not removed");
+        QVERIFY2(QFile::remove(m_databaseFilePath), "Database not removed");
     }
 }
 
@@ -123,16 +124,24 @@ void DatabaseTest::testCaseReconnect()
     QVERIFY(database.connect(m_databaseFilePath));
 }
 
+void DatabaseTest::testCaseReadAllUsersEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QList<OpenTimeTracker::Server::UserInfo> userList = database.readAllUsers();
+
+    QVERIFY(userList.isEmpty());
+}
+
 void DatabaseTest::testCaseAddUser_data()
 {
     QTest::addColumn<QString>("name");
     QTest::addColumn<QString>("password");
-    QTest::addColumn<bool>("enabled");
 
-    QTest::newRow("1") << "user1" << "111" << true;
-    QTest::newRow("2") << "user2" << "222" << true;
-    QTest::newRow("3") << "user3" << QString() << false;
-    QTest::newRow("4") << "user4" << QString() << false;
+    QTest::newRow("1") << "user1" << "111";
+    QTest::newRow("2") << "user2" << QString();
 }
 
 void DatabaseTest::testCaseAddUser()
@@ -144,27 +153,23 @@ void DatabaseTest::testCaseAddUser()
     // Add user
     QFETCH(QString, name);
     QFETCH(QString, password);
-    QFETCH(bool, enabled);
-    QVERIFY(database.addUser(name, password, enabled));
+    QVERIFY(database.addUser(name, password));
 }
 
 void DatabaseTest::testCaseAddUserFail_data()
 {
     QTest::addColumn<QString>("name");
     QTest::addColumn<QString>("password");
-    QTest::addColumn<bool>("enabled");
 
     // Invalid name
-    QTest::newRow("1") << QString() << "123" << true;
-    QTest::newRow("2") << "" << "234" << true;
+    QTest::newRow("1") << QString() << "123";
+    QTest::newRow("2") << "" << "234";
 
     // Invalid password
-    QTest::newRow("3") << "user3" << QString() << true;
-    QTest::newRow("4") << "user4" << "" << true;
-    QTest::newRow("5") << "user5" << "" << false;
+    QTest::newRow("3") << "user4" << "";
 
     // Existing password
-    QTest::newRow("6") << "user6" << "111" << true;
+    QTest::newRow("4") << "user6" << "111";
 }
 
 void DatabaseTest::testCaseAddUserFail()
@@ -176,11 +181,10 @@ void DatabaseTest::testCaseAddUserFail()
     // Add user
     QFETCH(QString, name);
     QFETCH(QString, password);
-    QFETCH(bool, enabled);
-    QVERIFY(!database.addUser(name, password, enabled));
+    QVERIFY(!database.addUser(name, password));
 }
 
-void DatabaseTest::testCaseReadAllEnabledUsers()
+void DatabaseTest::testCaseReadAllUsersNonEmptyDatabase()
 {
     OpenTimeTracker::Server::Database database;
 
@@ -196,25 +200,6 @@ void DatabaseTest::testCaseReadAllEnabledUsers()
 
     // User 2
     QCOMPARE(userList[1].name(), QString("user2"));
-    QCOMPARE(userList[1].password(), QString("222"));
-}
-
-void DatabaseTest::testCaseReadAllDisabledUsers()
-{
-    OpenTimeTracker::Server::Database database;
-
-    QVERIFY(database.connect(m_databaseFilePath));
-
-    QList<OpenTimeTracker::Server::UserInfo> userList = database.readAllUsers(false);
-
-    QCOMPARE(userList.size(), 2);
-
-    // User 3
-    QCOMPARE(userList[0].name(), QString("user3"));
-    QVERIFY(userList[0].password().isNull());
-
-    // User 4
-    QCOMPARE(userList[1].name(), QString("user4"));
     QVERIFY(userList[1].password().isNull());
 }
 

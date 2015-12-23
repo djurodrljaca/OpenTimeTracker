@@ -16,7 +16,9 @@
 #ifndef OPENTIMETRACKER_SERVER_USERINFO_HPP
 #define OPENTIMETRACKER_SERVER_USERINFO_HPP
 
+#include <QtCore/QMap>
 #include <QtCore/QString>
+#include <QtCore/QVariant>
 
 namespace OpenTimeTracker
 {
@@ -99,19 +101,16 @@ public:
     void setPassword(const QString &newPassword);
 
     /*!
-     * \brief   Checks if user is enabled in the system
+     * \brief   Creates a UserInfo object from a map
      *
-     * \retval  true    Enabled
-     * \retval  false   Not enabled
-     */
-    bool isEnabled() const;
-
-    /*!
-     * \brief   Sets enable state of the user in the system
+     * \param   map     Map that contains the user values
      *
-     * \param   enabled     New enable state
+     * \return  A new UserInfo object
+     *
+     * \note    Created object is invalid if the values in the map cannot be used to create a valid
+     *          UserInfo object.
      */
-    void setEnabled(bool enabled);
+    static UserInfo fromMap(const QMap<QString, QVariant> &map);
 
 private:
     /*!
@@ -128,11 +127,6 @@ private:
      * \brief   Holds the user's password
      */
     QString m_password;
-
-    /*!
-     * \brief   Holds the flag if user is enabled in the system
-     */
-    bool m_enabled;
 };
 
 }
