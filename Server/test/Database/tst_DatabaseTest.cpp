@@ -34,13 +34,25 @@ private Q_SLOTS:
     void testCaseReconnect();
 
     void testCaseReadAllUsersEmptyDatabase();
-
     void testCaseAddUser_data();
     void testCaseAddUser();
     void testCaseAddUserFail_data();
     void testCaseAddUserFail();
-
     void testCaseReadAllUsersNonEmptyDatabase();
+
+    void testCaseReadAllUserGroupsEmptyDatabase();
+    void testCaseAddUserGroup_data();
+    void testCaseAddUserGroup();
+    void testCaseAddUserGroupFail_data();
+    void testCaseAddUserGroupFail();
+    void testCaseReadAllUserGroupsNonEmptyDatabase();
+
+    void testCaseReadAllUserMappingsEmptyDatabase();
+    void testCaseAddUserMapping_data();
+    void testCaseAddUserMapping();
+    void testCaseAddUserMappingFail_data();
+    void testCaseAddUserMappingFail();
+    void testCaseReadAllUserMappingsNonEmptyDatabase();
 
 private:
     QString m_databaseFilePath;
@@ -130,9 +142,9 @@ void DatabaseTest::testCaseReadAllUsersEmptyDatabase()
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::UserInfo> userList = database.readAllUsers();
+    QList<OpenTimeTracker::Server::UserInfo> users = database.readAllUsers();
 
-    QVERIFY(userList.isEmpty());
+    QVERIFY(users.isEmpty());
 }
 
 void DatabaseTest::testCaseAddUser_data()
@@ -165,11 +177,14 @@ void DatabaseTest::testCaseAddUserFail_data()
     QTest::newRow("1") << QString() << "123";
     QTest::newRow("2") << "" << "234";
 
+    // Existing name
+    QTest::newRow("3") << "user1" << "333";
+
     // Invalid password
-    QTest::newRow("3") << "user4" << "";
+    QTest::newRow("4") << "user4" << "";
 
     // Existing password
-    QTest::newRow("4") << "user6" << "111";
+    QTest::newRow("5") << "user6" << "111";
 }
 
 void DatabaseTest::testCaseAddUserFail()
@@ -190,17 +205,172 @@ void DatabaseTest::testCaseReadAllUsersNonEmptyDatabase()
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::UserInfo> userList = database.readAllUsers();
+    QList<OpenTimeTracker::Server::UserInfo> users = database.readAllUsers();
 
-    QCOMPARE(userList.size(), 2);
+    QCOMPARE(users.size(), 2);
 
     // User 1
-    QCOMPARE(userList[0].name(), QString("user1"));
-    QCOMPARE(userList[0].password(), QString("111"));
+    QCOMPARE(users[0].name(), QString("user1"));
+    QCOMPARE(users[0].password(), QString("111"));
 
     // User 2
-    QCOMPARE(userList[1].name(), QString("user2"));
-    QVERIFY(userList[1].password().isNull());
+    QCOMPARE(users[1].name(), QString("user2"));
+    QVERIFY(users[1].password().isNull());
+}
+
+void DatabaseTest::testCaseReadAllUserGroupsEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QList<OpenTimeTracker::Server::UserGroupInfo> userGroups = database.readAllUserGroups();
+
+    QVERIFY(userGroups.isEmpty());
+}
+
+void DatabaseTest::testCaseAddUserGroup_data()
+{
+    QTest::addColumn<QString>("name");
+
+    QTest::newRow("1") << "userGroup1";
+    QTest::newRow("2") << "userGroup2";
+}
+
+void DatabaseTest::testCaseAddUserGroup()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Add user group
+    QFETCH(QString, name);
+    QVERIFY(database.addUserGroup(name));
+}
+
+void DatabaseTest::testCaseAddUserGroupFail_data()
+{
+    QTest::addColumn<QString>("name");
+
+    // Invalid name
+    QTest::newRow("1") << QString();
+    QTest::newRow("2") << "";
+
+    // Existing name
+    QTest::newRow("3") << "userGroup1";
+}
+
+void DatabaseTest::testCaseAddUserGroupFail()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Add user group
+    QFETCH(QString, name);
+    QVERIFY(!database.addUserGroup(name));
+}
+
+void DatabaseTest::testCaseReadAllUserGroupsNonEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QList<OpenTimeTracker::Server::UserGroupInfo> userGroups = database.readAllUserGroups();
+
+    QCOMPARE(userGroups.size(), 2);
+
+    // User group 1
+    QCOMPARE(userGroups[0].name(), QString("userGroup1"));
+
+    // User group 2
+    QCOMPARE(userGroups[1].name(), QString("userGroup2"));
+}
+
+void DatabaseTest::testCaseReadAllUserMappingsEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QList<OpenTimeTracker::Server::UserMappingInfo> userMappings = database.readAllUserMappings();
+
+    QVERIFY(userMappings.isEmpty());
+}
+
+void DatabaseTest::testCaseAddUserMapping_data()
+{
+    QTest::addColumn<qint64>("userGroupId");
+    QTest::addColumn<qint64>("userId");
+
+    // Map user 1 to user groups 1 and 2
+    QTest::newRow("1") << 1LL << 1LL;
+    QTest::newRow("2") << 2LL << 1LL;
+
+    // Map user 2 to user group 2
+    QTest::newRow("3") << 2LL << 2LL;
+}
+
+void DatabaseTest::testCaseAddUserMapping()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Add user mapping
+    QFETCH(qint64, userGroupId);
+    QFETCH(qint64, userId);
+    QVERIFY(database.addUserMapping(userGroupId, userId));
+}
+
+void DatabaseTest::testCaseAddUserMappingFail_data()
+{
+    QTest::addColumn<qint64>("userGroupId");
+    QTest::addColumn<qint64>("userId");
+
+    // Invalid user group ID
+    QTest::newRow("1") << 0LL << 1LL;
+    QTest::newRow("2") << 3LL << 1LL;
+
+    // Invalid user ID
+    QTest::newRow("3") << 1LL << 0LL;
+    QTest::newRow("4") << 1LL << 3LL;
+}
+
+void DatabaseTest::testCaseAddUserMappingFail()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Add user mapping
+    QFETCH(qint64, userGroupId);
+    QFETCH(qint64, userId);
+    QVERIFY(!database.addUserMapping(userGroupId, userId));
+}
+
+void DatabaseTest::testCaseReadAllUserMappingsNonEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QList<OpenTimeTracker::Server::UserMappingInfo> userMappings = database.readAllUserMappings();
+
+    QCOMPARE(userMappings.size(), 3);
+
+    // User mapping 1 (user group 1 to user 1)
+    QCOMPARE(userMappings[0].userGroupId(), 1);
+    QCOMPARE(userMappings[0].userId(), 1);
+
+    // User mapping 2 (user group 2 to user 1)
+    QCOMPARE(userMappings[1].userGroupId(), 2);
+    QCOMPARE(userMappings[1].userId(), 1);
+
+    // User mapping 3 (user group 2 to user 2)
+    QCOMPARE(userMappings[2].userGroupId(), 2);
+    QCOMPARE(userMappings[2].userId(), 2);
 }
 
 QTEST_APPLESS_MAIN(DatabaseTest)

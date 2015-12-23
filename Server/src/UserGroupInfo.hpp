@@ -16,7 +16,9 @@
 #ifndef OPENTIMETRACKER_SERVER_USERGROUPINFO_HPP
 #define OPENTIMETRACKER_SERVER_USERGROUPINFO_HPP
 
+#include <QtCore/QMap>
 #include <QtCore/QString>
+#include <QtCore/QVariant>
 
 namespace OpenTimeTracker
 {
@@ -85,19 +87,16 @@ public:
     void setName(const QString &newName);
 
     /*!
-     * \brief   Checks if user group is enabled in the system
+     * \brief   Creates a UserGroupInfo object from a map
      *
-     * \retval  true    Enabled
-     * \retval  false   Not enabled
-     */
-    bool isEnabled() const;
-
-    /*!
-     * \brief   Sets enable state of the user in the system
+     * \param   map     Map that contains the user group values
      *
-     * \param   enabled     New enable state
+     * \return  A new UserGroupInfo object
+     *
+     * \note    Created object is invalid if the values in the map cannot be used to create a valid
+     *          UserGroupInfo object.
      */
-    void setEnabled(bool enabled);
+    static UserGroupInfo fromMap(const QMap<QString, QVariant> &map);
 
 private:
     /*!
@@ -109,11 +108,6 @@ private:
      * \brief   Holds the user group's name
      */
     QString m_name;
-
-    /*!
-     * \brief   Holds the flag if user group is enabled in the system
-     */
-    bool m_enabled;
 };
 
 }

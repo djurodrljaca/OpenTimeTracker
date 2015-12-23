@@ -72,12 +72,43 @@ void UserGroupInfo::setName(const QString &newName)
     m_name = newName;
 }
 
-bool UserGroupInfo::isEnabled() const
+UserGroupInfo UserGroupInfo::fromMap(const QMap<QString, QVariant> &map)
 {
-    return m_enabled;
-}
+    UserGroupInfo userGroup;
 
-void UserGroupInfo::setEnabled(bool enabled)
-{
-    m_enabled = enabled;
+    if (map.size() == 2)
+    {
+        bool success = false;
+
+        // Get user group ID
+        QVariant value = map["id"];
+
+        if (value.canConvert<qint64>())
+        {
+            userGroup.setId(value.toLongLong(&success));
+        }
+
+        // Get user group name
+        if (success)
+        {
+            value = map["name"];
+
+            if (value.canConvert<QString>())
+            {
+                userGroup.setName(value.toString());
+            }
+            else
+            {
+                success = false;
+            }
+        }
+
+        // On error clear the object
+        if (!success)
+        {
+            userGroup = UserGroupInfo();
+        }
+    }
+
+    return userGroup;
 }

@@ -102,7 +102,6 @@ UserInfo UserInfo::fromMap(const QMap<QString, QVariant> &map)
         if (value.canConvert<qint64>())
         {
             user.setId(value.toLongLong(&success));
-            success = true;
         }
 
         // Get user name

@@ -16,7 +16,9 @@
 #ifndef OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
 #define OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
 
-#include <QtCore/QtGlobal>
+#include <QtCore/QMap>
+#include <QtCore/QString>
+#include <QtCore/QVariant>
 
 namespace OpenTimeTracker
 {
@@ -97,6 +99,18 @@ public:
      * \param   newGroupId  New user ID
      */
     void setUserId(const qint64 &newUserId);
+
+    /*!
+     * \brief   Creates a UserMappingInfo object from a map
+     *
+     * \param   map     Map that contains the user mapping values
+     *
+     * \return  A new UserInfo object
+     *
+     * \note    Created object is invalid if the values in the map cannot be used to create a valid
+     *          UserMappingInfo object.
+     */
+    static UserMappingInfo fromMap(const QMap<QString, QVariant> &map);
 
 private:
     /*!

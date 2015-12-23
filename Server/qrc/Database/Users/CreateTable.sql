@@ -8,8 +8,3 @@ CREATE TABLE Users (
                              (password <> '') )
                      UNIQUE
 );
-CREATE INDEX [] ON Users (
-    id,
-    name,
-    password
-);

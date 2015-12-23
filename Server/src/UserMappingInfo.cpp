@@ -55,6 +55,16 @@ bool UserMappingInfo::isValid() const
     return valid;
 }
 
+qint64 UserMappingInfo::id() const
+{
+    return m_id;
+}
+
+void UserMappingInfo::setId(const qint64 &newId)
+{
+    m_id = newId;
+}
+
 qint64 UserMappingInfo::userGroupId() const
 {
     return m_userGroupId;
@@ -73,4 +83,60 @@ qint64 UserMappingInfo::userId() const
 void UserMappingInfo::setUserId(const qint64 &newUserId)
 {
     m_userId = newUserId;
+}
+
+UserMappingInfo UserMappingInfo::fromMap(const QMap<QString, QVariant> &map)
+{
+    UserMappingInfo userMapping;
+
+    if (map.size() == 3)
+    {
+        bool success = false;
+
+        // Get user mapping ID
+        QVariant value = map["id"];
+
+        if (value.canConvert<qint64>())
+        {
+            userMapping.setId(value.toLongLong(&success));
+        }
+
+        // Get user group ID
+        if (success)
+        {
+            value = map["userGroupId"];
+
+            if (value.canConvert<qint64>())
+            {
+                userMapping.setUserGroupId(value.toLongLong(&success));
+            }
+            else
+            {
+                success = false;
+            }
+        }
+
+        // Get user ID
+        if (success)
+        {
+            value = map["userId"];
+
+            if (value.canConvert<qint64>())
+            {
+                userMapping.setUserId(value.toLongLong(&success));
+            }
+            else
+            {
+                success = false;
+            }
+        }
+
+        // On error clear the object
+        if (!success)
+        {
+            userMapping = UserMappingInfo();
+        }
+    }
+
+    return userMapping;
 }

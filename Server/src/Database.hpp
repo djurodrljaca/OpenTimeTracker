@@ -19,6 +19,8 @@
 #include <QtSql/QSqlDatabase>
 #include <QtCore/QVariant>
 #include "UserInfo.hpp"
+#include "UserGroupInfo.hpp"
+#include "UserMappingInfo.hpp"
 
 namespace OpenTimeTracker
 {
@@ -84,6 +86,41 @@ public:
      */
     QList<UserInfo> readAllUsers();
 
+    /*!
+     * \brief   Adds a new user group to the system
+     *
+     * \param   name    User group's name
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool addUserGroup(const QString &name);
+
+    /*!
+     * \brief   Reads all user groups from the system
+     *
+     * \return  List of user groups
+     */
+    QList<UserGroupInfo> readAllUserGroups();
+
+    /*!
+     * \brief   Adds a new user mapping to the system
+     *
+     * \param   userGroupId User group's ID to map to a user
+     * \param   userId      User's ID to map to a user group
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool addUserMapping(const qint64 &userGroupId, const qint64 &userId);
+
+    /*!
+     * \brief   Reads all user mappings from the system
+     *
+     * \return  List of user mappings
+     */
+    QList<UserMappingInfo> readAllUserMappings();
+
 private:
     /*!
      * \brief   Initializes the database
@@ -95,6 +132,14 @@ private:
      *          first clear the database and then initialize it.
      */
     bool initialize();
+
+    /*!
+     * \brief   Initialize all needed pragmas
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool initializePragmas();
 
     /*!
      * \brief   Reads the database's version

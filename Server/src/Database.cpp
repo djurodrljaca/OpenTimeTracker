@@ -66,6 +66,12 @@ bool Database::connect(const QString &databaseFilePath)
             QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
             db.setDatabaseName(databaseFilePath);
             success = db.open();
+
+            // Initialize all pragmas
+            if (success)
+            {
+                success = initializePragmas();
+            }
         }
 
         if (success)
@@ -160,7 +166,7 @@ bool Database::addUser(const QString &name, const QString &password)
 
 QList<UserInfo> Database::readAllUsers()
 {
-    QList<UserInfo> userList;
+    QList<UserInfo> users;
 
     if (isConnected())
     {
@@ -182,12 +188,12 @@ QList<UserInfo> Database::readAllUsers()
                     if (user.isValid())
                     {
                         // Add user to list
-                        userList.append(user);
+                        users.append(user);
                     }
                     else
                     {
                         // On error stop reading the results and clear them
-                        userList.clear();
+                        users.clear();
                         break;
                     }
                 }
@@ -195,7 +201,134 @@ QList<UserInfo> Database::readAllUsers()
         }
     }
 
-    return userList;
+    return users;
+}
+
+bool Database::addUserGroup(const QString &name)
+{
+    bool success = false;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(QStringLiteral("UserGroups/Add.sql"));
+
+        // Execute command
+        if (command.isEmpty() == false)
+        {
+            QMap<QString, QVariant> values;
+            values[":name"] = name;
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    return success;
+}
+
+QList<UserGroupInfo> Database::readAllUserGroups()
+{
+    QList<UserGroupInfo> userGroups;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(
+                                    QStringLiteral("UserGroups/ReadAll.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            QList<QMap<QString, QVariant> > results;
+
+            if (executeSqlCommand(command, QMap<QString, QVariant>(), &results))
+            {
+                // Get all user groups from the query
+                for (int i = 0; i < results.size(); i++)
+                {
+                    UserGroupInfo userGroup = UserGroupInfo::fromMap(results.at(i));
+
+                    if (userGroup.isValid())
+                    {
+                        // Add user group to list
+                        userGroups.append(userGroup);
+                    }
+                    else
+                    {
+                        // On error stop reading the results and clear them
+                        userGroups.clear();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return userGroups;
+}
+
+bool Database::addUserMapping(const qint64 &userGroupId, const qint64 &userId)
+{
+    bool success = false;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(QStringLiteral("UserMapping/Add.sql"));
+
+        // Execute command
+        if (command.isEmpty() == false)
+        {
+            QMap<QString, QVariant> values;
+            values[":userGroupId"] = userGroupId;
+            values[":userId"] = userId;
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    return success;
+}
+
+QList<UserMappingInfo> Database::readAllUserMappings()
+{
+    QList<UserMappingInfo> userMappings;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(
+                                    QStringLiteral("UserMapping/ReadAll.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            QList<QMap<QString, QVariant> > results;
+
+            if (executeSqlCommand(command, QMap<QString, QVariant>(), &results))
+            {
+                // Get all user mappings from the query
+                for (int i = 0; i < results.size(); i++)
+                {
+                    UserMappingInfo userMapping = UserMappingInfo::fromMap(results.at(i));
+
+                    if (userMapping.isValid())
+                    {
+                        // Add user mapping to list
+                        userMappings.append(userMapping);
+                    }
+                    else
+                    {
+                        // On error stop reading the results and clear them
+                        userMappings.clear();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return userMappings;
 }
 
 bool Database::initialize()
@@ -227,6 +360,16 @@ bool Database::initialize()
             success = writeVersion();
         }
     }
+
+    return success;
+}
+
+bool Database::initializePragmas()
+{
+    bool success = false;
+
+    // Enable support for foreign keys
+    success = writePragmaValue("foreign_keys", 1);
 
     return success;
 }
@@ -353,6 +496,9 @@ bool Database::executeSqlCommand(const QString &command,
     {
         // Prepare SQL command
         QSqlQuery query;
+
+        //success = query.exec("PRAGMA foreign_keys = 1");
+        //success = false;
 
         if (query.prepare(command))
         {

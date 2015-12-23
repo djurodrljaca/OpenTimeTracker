@@ -5,5 +5,9 @@
         <file>Database/Users/CreateTable.sql</file>
         <file>Database/Users/Add.sql</file>
         <file>Database/Users/ReadAll.sql</file>
+        <file>Database/UserGroups/Add.sql</file>
+        <file>Database/UserGroups/ReadAll.sql</file>
+        <file>Database/UserMapping/Add.sql</file>
+        <file>Database/UserMapping/ReadAll.sql</file>
     </qresource>
 </RCC>
