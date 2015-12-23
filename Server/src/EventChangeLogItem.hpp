@@ -197,7 +197,7 @@ private:
     /*!
      * \brief   Holds the event change log item's timestamp
      *
-     * \note    Timestamp is in UTC!
+     * \note    Timestamp is in UTC
      */
     QDateTime m_timestamp;
 

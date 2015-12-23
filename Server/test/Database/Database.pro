@@ -17,12 +17,14 @@ TEMPLATE = app
 
 HEADERS += \
     ../../src/Database.hpp \
+    ../../src/Event.hpp \
     ../../src/User.hpp \
     ../../src/UserGroup.hpp \
     ../../src/UserMapping.hpp
 SOURCES += \
     tst_DatabaseTest.cpp \
     ../../src/Database.cpp \
+    ../../src/Event.cpp \
     ../../src/User.cpp \
     ../../src/UserGroup.cpp \
     ../../src/UserMapping.cpp

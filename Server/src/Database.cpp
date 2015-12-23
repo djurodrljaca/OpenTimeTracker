@@ -331,6 +331,94 @@ QList<UserMapping> Database::readAllUserMappings()
     return userMappings;
 }
 
+bool Database::addEvent(const QDateTime &timestamp, const qint64 &userId, const Event::Type type)
+{
+    bool success = false;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(QStringLiteral("Events/Add.sql"));
+
+        // Execute command
+        if (command.isEmpty() == false)
+        {
+            QMap<QString, QVariant> values;
+            values[":timestamp"] = timestamp;
+            values[":userId"] = userId;
+            values[":type"] = static_cast<int>(type);
+            values[":enabled"] = 1;
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    return success;
+}
+
+QList<Event> Database::readAllEvents()
+{
+    QList<Event> events;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(QStringLiteral("Events/ReadAll.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            QList<QMap<QString, QVariant> > results;
+
+            if (executeSqlCommand(command, QMap<QString, QVariant>(), &results))
+            {
+                // Get all events from the query
+                for (int i = 0; i < results.size(); i++)
+                {
+                    Event event = Event::fromMap(results.at(i));
+
+                    if (event.isValid())
+                    {
+                        // Add event to list
+                        events.append(event);
+                    }
+                    else
+                    {
+                        // On error stop reading the results and clear them
+                        events.clear();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return events;
+}
+
+bool Database::changeEvent(const qint64 &eventId,
+                           const QString &fieldName,
+                           const QVariant &newValue,
+                           const qint64 &userId,
+                           const QString &comment)
+{
+    bool success = false;
+
+    // TODO: start transaction, read event, change event, insert event change log item, commit transaction
+
+    return success;
+}
+
+bool Database::initializePragmas()
+{
+    bool success = false;
+
+    // Enable support for foreign keys
+    success = writePragmaValue("foreign_keys", 1);
+
+    return success;
+}
+
 bool Database::initialize()
 {
     bool success = false;
@@ -352,6 +440,18 @@ bool Database::initialize()
             success = createTable(QStringLiteral("UserMapping"));
         }
 
+        // Create table: Events
+        if (success)
+        {
+            success = createTable(QStringLiteral("Events"));
+        }
+
+        // Create table: EventChangeLog
+        if (success)
+        {
+            success = createTable(QStringLiteral("EventChangeLog"));
+        }
+
         // TODO: implement creation of the rest of the tables
 
         // Write the database version
@@ -360,16 +460,6 @@ bool Database::initialize()
             success = writeVersion();
         }
     }
-
-    return success;
-}
-
-bool Database::initializePragmas()
-{
-    bool success = false;
-
-    // Enable support for foreign keys
-    success = writePragmaValue("foreign_keys", 1);
 
     return success;
 }
@@ -496,9 +586,6 @@ bool Database::executeSqlCommand(const QString &command,
     {
         // Prepare SQL command
         QSqlQuery query;
-
-        //success = query.exec("PRAGMA foreign_keys = 1");
-        //success = false;
 
         if (query.prepare(command))
         {

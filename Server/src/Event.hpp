@@ -86,6 +86,8 @@ public:
      * \brief   Gets event's timestamp
      *
      * \return  Event's timestamp
+     *
+     * \note    Timestamp is in UTC
      */
     QDateTime timestamp() const;
 
@@ -93,8 +95,24 @@ public:
      * \brief   Sets event's timestamp
      *
      * \param   newTimestamp    New event's timestamp
+     *
+     * \note    Timestamp will be converted to UTC before it is stored
      */
     void setTimestamp(const QDateTime &newTimestamp);
+
+    /*!
+     * \brief   Gets event's user ID
+     *
+     * \return  Event's user ID
+     */
+    qint64 userId() const;
+
+    /*!
+     * \brief   Sets event's user ID
+     *
+     * \param   newUserId   New event's user ID
+     */
+    void setUserId(const qint64 &newUserId);
 
     /*!
      * \brief   Gets event's type
@@ -145,9 +163,14 @@ private:
     /*!
      * \brief   Holds the event's timestamp
      *
-     * \note    Timestamp is in UTC!
+     * \note    Timestamp is in UTC
      */
     QDateTime m_timestamp;
+
+    /*!
+     * \brief   Holds the event's user ID
+     */
+    qint64 m_userId;
 
     /*!
      * \brief   Holds the event's type

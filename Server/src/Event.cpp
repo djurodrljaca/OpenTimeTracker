@@ -20,6 +20,7 @@ using namespace OpenTimeTracker::Server;
 Event::Event()
     : m_id(0LL),
       m_timestamp(),
+      m_userId(0LL),
       m_type(Type_Invalid),
       m_enabled(false)
 {
@@ -28,6 +29,7 @@ Event::Event()
 Event::Event(const Event &other)
     : m_id(other.m_id),
       m_timestamp(other.m_timestamp),
+      m_userId(other.m_userId),
       m_type(other.m_type),
       m_enabled(other.m_enabled)
 {
@@ -39,6 +41,7 @@ Event &Event::operator =(const Event &other)
     {
         m_id = other.m_id;
         m_timestamp = other.m_timestamp;
+        m_userId = other.m_userId;
         m_type = other.m_type;
         m_enabled = other.m_enabled;
     }
@@ -50,7 +53,7 @@ bool Event::isValid() const
 {
     bool valid = true;
 
-    if ((m_id < 1LL) || (!m_timestamp.isValid()) || (m_type == Type_Invalid))
+    if ((m_id < 1LL) || (!m_timestamp.isValid()) || (m_userId < 1LL) || (m_type == Type_Invalid))
     {
         valid = false;
     }
@@ -75,7 +78,17 @@ QDateTime Event::timestamp() const
 
 void Event::setTimestamp(const QDateTime &newTimestamp)
 {
-    m_timestamp = newTimestamp;
+    m_timestamp = newTimestamp.toUTC();
+}
+
+qint64 Event::userId() const
+{
+    return m_userId;
+}
+
+void Event::setUserId(const qint64 &newUserId)
+{
+    m_userId = newUserId;
 }
 
 Event::Type Event::type() const
@@ -110,7 +123,7 @@ Event Event::fromMap(const QMap<QString, QVariant> &map)
 {
     Event event;
 
-    if (map.size() == 4)
+    if (map.size() == 5)
     {
         bool success = false;
 
@@ -132,6 +145,21 @@ Event Event::fromMap(const QMap<QString, QVariant> &map)
                 QDateTime timestamp = QDateTime::fromString(value.toString(), Qt::ISODate);
                 timestamp.setTimeSpec(Qt::UTC);
                 event.setTimestamp(timestamp);
+            }
+            else
+            {
+                success = false;
+            }
+        }
+
+        // Get event change log item user ID
+        if (success)
+        {
+            value = map["userId"];
+
+            if (value.canConvert<qint64>())
+            {
+                event.setUserId(value.toLongLong(&success));
             }
             else
             {

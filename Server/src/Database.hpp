@@ -18,6 +18,7 @@
 
 #include <QtSql/QSqlDatabase>
 #include <QtCore/QVariant>
+#include "Event.hpp"
 #include "User.hpp"
 #include "UserGroup.hpp"
 #include "UserMapping.hpp"
@@ -121,7 +122,57 @@ public:
      */
     QList<UserMapping> readAllUserMappings();
 
+    /*!
+     * \brief   Adds a new event to the system
+     *
+     * \param   timestamp   Event's timestamp
+     * \param   userId      Event's user ID
+     * \param   type        Event's type
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     *
+     * \note    All new events are by default enabled
+     */
+    bool addEvent(const QDateTime &timestamp, const qint64 &userId, const Event::Type type);
+
+    /*!
+     * \brief   Reads all events from the system
+     *
+     * \return  List of events
+     */
+    QList<Event> readAllEvents();
+    // TODO: add search parameters? (time range, user ID)
+
+    /*!
+     * \brief   Changes a value in an event in the system
+     *
+     * \param   eventId     ID of the event to change
+     * \param   fieldName   Name of the field to change
+     * \param   newValue    New value
+     * \param   userId      ID of the user that requested the change
+     * \param   comment     Explanation why the change was requested
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     *
+     * \note    Comment must not be empty
+     */
+    bool changeEvent(const qint64 &eventId,
+                     const QString &fieldName,
+                     const QVariant &newValue,
+                     const qint64 &userId,
+                     const QString &comment);
+
 private:
+    /*!
+     * \brief   Initialize all needed pragmas
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool initializePragmas();
+
     /*!
      * \brief   Initializes the database
      *
@@ -132,14 +183,6 @@ private:
      *          first clear the database and then initialize it.
      */
     bool initialize();
-
-    /*!
-     * \brief   Initialize all needed pragmas
-     *
-     * \retval  true    Success
-     * \retval  false   Error
-     */
-    bool initializePragmas();
 
     /*!
      * \brief   Reads the database's version

@@ -18,6 +18,8 @@
 #include <QFile>
 #include "../../src/Database.hpp"
 
+Q_DECLARE_METATYPE(OpenTimeTracker::Server::Event::Type)
+
 class DatabaseTest : public QObject
 {
     Q_OBJECT
@@ -26,13 +28,16 @@ public:
     DatabaseTest();
 
 private Q_SLOTS:
+    // Init and cleanup
     void initTestCase();
     void cleanupTestCase();
 
+    // Connection unit tests
     void testCaseConnect();
     void testCaseDisconnect();
     void testCaseReconnect();
 
+    // User unit tests
     void testCaseReadAllUsersEmptyDatabase();
     void testCaseAddUser_data();
     void testCaseAddUser();
@@ -40,6 +45,7 @@ private Q_SLOTS:
     void testCaseAddUserFail();
     void testCaseReadAllUsersNonEmptyDatabase();
 
+    // User group unit tests
     void testCaseReadAllUserGroupsEmptyDatabase();
     void testCaseAddUserGroup_data();
     void testCaseAddUserGroup();
@@ -47,12 +53,21 @@ private Q_SLOTS:
     void testCaseAddUserGroupFail();
     void testCaseReadAllUserGroupsNonEmptyDatabase();
 
+    // User mapping unit tests
     void testCaseReadAllUserMappingsEmptyDatabase();
     void testCaseAddUserMapping_data();
     void testCaseAddUserMapping();
     void testCaseAddUserMappingFail_data();
     void testCaseAddUserMappingFail();
     void testCaseReadAllUserMappingsNonEmptyDatabase();
+
+    // Event unit tests
+    void testCaseReadAllEventsEmptyDatabase();
+    void testCaseAddEvent_data();
+    void testCaseAddEvent();
+    void testCaseAddEventFail_data();
+    void testCaseAddEventFail();
+    void testCaseReadAllEventsNonEmptyDatabase();
 
 private:
     QString m_databaseFilePath;
@@ -62,6 +77,8 @@ DatabaseTest::DatabaseTest()
     : m_databaseFilePath("test.db")
 {
 }
+
+// Init and cleanup ********************************************************************************
 
 void DatabaseTest::initTestCase()
 {
@@ -78,6 +95,8 @@ void DatabaseTest::cleanupTestCase()
         QVERIFY2(QFile::remove(m_databaseFilePath), "Database not removed");
     }
 }
+
+// Connection unit tests ***************************************************************************
 
 void DatabaseTest::testCaseConnect()
 {
@@ -135,6 +154,8 @@ void DatabaseTest::testCaseReconnect()
     // Reconnecting should be successful
     QVERIFY(database.connect(m_databaseFilePath));
 }
+
+// User unit tests *********************************************************************************
 
 void DatabaseTest::testCaseReadAllUsersEmptyDatabase()
 {
@@ -218,6 +239,8 @@ void DatabaseTest::testCaseReadAllUsersNonEmptyDatabase()
     QVERIFY(users[1].password().isNull());
 }
 
+// User group unit tests ***************************************************************************
+
 void DatabaseTest::testCaseReadAllUserGroupsEmptyDatabase()
 {
     OpenTimeTracker::Server::Database database;
@@ -287,6 +310,8 @@ void DatabaseTest::testCaseReadAllUserGroupsNonEmptyDatabase()
     // User group 2
     QCOMPARE(userGroups[1].name(), QString("userGroup2"));
 }
+
+// User mapping unit tests *************************************************************************
 
 void DatabaseTest::testCaseReadAllUserMappingsEmptyDatabase()
 {
@@ -361,16 +386,126 @@ void DatabaseTest::testCaseReadAllUserMappingsNonEmptyDatabase()
     QCOMPARE(userMappings.size(), 3);
 
     // User mapping 1 (user group 1 to user 1)
-    QCOMPARE(userMappings[0].userGroupId(), 1);
-    QCOMPARE(userMappings[0].userId(), 1);
+    QCOMPARE(userMappings[0].userGroupId(), 1LL);
+    QCOMPARE(userMappings[0].userId(), 1LL);
 
     // User mapping 2 (user group 2 to user 1)
-    QCOMPARE(userMappings[1].userGroupId(), 2);
-    QCOMPARE(userMappings[1].userId(), 1);
+    QCOMPARE(userMappings[1].userGroupId(), 2LL);
+    QCOMPARE(userMappings[1].userId(), 1LL);
 
     // User mapping 3 (user group 2 to user 2)
-    QCOMPARE(userMappings[2].userGroupId(), 2);
-    QCOMPARE(userMappings[2].userId(), 2);
+    QCOMPARE(userMappings[2].userGroupId(), 2LL);
+    QCOMPARE(userMappings[2].userId(), 2LL);
+}
+
+// Event unit tests ********************************************************************************
+
+void DatabaseTest::testCaseReadAllEventsEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QList<OpenTimeTracker::Server::Event> events = database.readAllEvents();
+
+    QVERIFY(events.isEmpty());
+}
+
+void DatabaseTest::testCaseAddEvent_data()
+{
+    QTest::addColumn<QDateTime>("timestamp");
+    QTest::addColumn<qint64>("userId");
+    QTest::addColumn<OpenTimeTracker::Server::Event::Type>("type");
+
+    QTest::newRow("1") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00), Qt::UTC)
+                       << 1LL
+                       << OpenTimeTracker::Server::Event::Type_Started;
+    QTest::newRow("2") << QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00), Qt::UTC)
+                       << 1LL
+                       << OpenTimeTracker::Server::Event::Type_OnBreak;
+    QTest::newRow("3") << QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00), Qt::UTC)
+                       << 1LL
+                       << OpenTimeTracker::Server::Event::Type_FromBreak;
+    QTest::newRow("4") << QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00), Qt::UTC)
+                       << 1LL
+                       << OpenTimeTracker::Server::Event::Type_Finished;
+}
+
+void DatabaseTest::testCaseAddEvent()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Add event
+    QFETCH(QDateTime, timestamp);
+    QFETCH(qint64, userId);
+    QFETCH(OpenTimeTracker::Server::Event::Type, type);
+    QVERIFY(database.addEvent(timestamp, userId, type));
+}
+
+void DatabaseTest::testCaseAddEventFail_data()
+{
+    QTest::addColumn<QDateTime>("timestamp");
+    QTest::addColumn<qint64>("userId");
+    QTest::addColumn<OpenTimeTracker::Server::Event::Type>("type");
+
+    // Invalid timestamp
+    QTest::newRow("1") << QDateTime() << 1LL << OpenTimeTracker::Server::Event::Type_Started;
+
+    // Invalid user ID
+    QTest::newRow("2") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00), Qt::UTC)
+                       << 0LL
+                       << OpenTimeTracker::Server::Event::Type_Started;
+
+    // Invalid type
+    QTest::newRow("3") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00), Qt::UTC)
+                       << 1LL
+                       << OpenTimeTracker::Server::Event::Type_Invalid;
+}
+
+void DatabaseTest::testCaseAddEventFail()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Add event
+    QFETCH(QDateTime, timestamp);
+    QFETCH(qint64, userId);
+    QFETCH(OpenTimeTracker::Server::Event::Type, type);
+    QVERIFY(!database.addEvent(timestamp, userId, type));
+}
+
+void DatabaseTest::testCaseReadAllEventsNonEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QList<OpenTimeTracker::Server::Event> events = database.readAllEvents();
+
+    QCOMPARE(events.size(), 4);
+
+    // Event 1
+    QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00), Qt::UTC));
+    QCOMPARE(events[0].userId(), 1LL);
+    QCOMPARE(events[0].type(), OpenTimeTracker::Server::Event::Type_Started);
+
+    // Event 2
+    QCOMPARE(events[1].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00), Qt::UTC));
+    QCOMPARE(events[1].userId(), 1LL);
+    QCOMPARE(events[1].type(), OpenTimeTracker::Server::Event::Type_OnBreak);
+
+    // Event 3
+    QCOMPARE(events[2].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00), Qt::UTC));
+    QCOMPARE(events[2].userId(), 1LL);
+    QCOMPARE(events[2].type(), OpenTimeTracker::Server::Event::Type_FromBreak);
+
+    // Event 4
+    QCOMPARE(events[3].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00), Qt::UTC));
+    QCOMPARE(events[3].userId(), 1LL);
+    QCOMPARE(events[3].type(), OpenTimeTracker::Server::Event::Type_Finished);
 }
 
 QTEST_APPLESS_MAIN(DatabaseTest)
