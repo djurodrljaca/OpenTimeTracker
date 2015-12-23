@@ -101,14 +101,14 @@ public:
     void setPassword(const QString &newPassword);
 
     /*!
-     * \brief   Creates a UserInfo object from a map
+     * \brief   Creates an object from a map
      *
      * \param   map     Map that contains the user values
      *
-     * \return  A new UserInfo object
+     * \return  A new object
      *
      * \note    Created object is invalid if the values in the map cannot be used to create a valid
-     *          UserInfo object.
+     *          object.
      */
     static UserInfo fromMap(const QMap<QString, QVariant> &map);
 

@@ -19,7 +19,7 @@
 using namespace OpenTimeTracker::Server;
 
 UserInfo::UserInfo()
-    : m_id(-1LL),
+    : m_id(0LL),
       m_name(),
       m_password()
 {
@@ -48,7 +48,7 @@ bool UserInfo::isValid() const
 {
     bool valid = true;
 
-    if ((m_id < 0) ||
+    if ((m_id < 1LL) ||
         m_name.isEmpty() ||
         ((m_password.isNull() == false) && m_password.isEmpty()))
     {

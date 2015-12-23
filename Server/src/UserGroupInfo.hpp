@@ -87,14 +87,14 @@ public:
     void setName(const QString &newName);
 
     /*!
-     * \brief   Creates a UserGroupInfo object from a map
+     * \brief   Creates an object from a map
      *
      * \param   map     Map that contains the user group values
      *
-     * \return  A new UserGroupInfo object
+     * \return  A new object
      *
      * \note    Created object is invalid if the values in the map cannot be used to create a valid
-     *          UserGroupInfo object.
+     *          object.
      */
     static UserGroupInfo fromMap(const QMap<QString, QVariant> &map);
 

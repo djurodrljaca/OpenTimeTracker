@@ -13,9 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
-#define OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
+#ifndef OPENTIMETRACKER_SERVER_EVENT_HPP
+#define OPENTIMETRACKER_SERVER_EVENT_HPP
 
+#include <QtCore/QDateTime>
 #include <QtCore/QMap>
 #include <QtCore/QString>
 #include <QtCore/QVariant>
@@ -26,21 +27,30 @@ namespace Server
 {
 
 /*!
- * \brief   Holds information for mapping users to user groups
+ * \brief   Holds event entries
  */
-class UserMappingInfo
+class Event
 {
 public:
+    enum Type
+    {
+        Type_Invalid = 0,
+        Type_Started,
+        Type_OnBreak,
+        Type_FromBreak,
+        Type_Finished
+    };
+
     /*!
      * \brief   Constructor
      */
-    UserMappingInfo();
+    Event();
 
     /*!
      * \brief   Copy constructor
      * \param   other   Object to be copied
      */
-    UserMappingInfo(const UserMappingInfo &other);
+    Event(const Event &other);
 
     /*!
      * \brief   operator =
@@ -48,7 +58,7 @@ public:
      *
      * \return  Reference to the this object
      */
-    UserMappingInfo &operator =(const UserMappingInfo &other);
+    Event &operator =(const Event &other);
 
     /*!
      * \brief   Checks if object is valid
@@ -59,77 +69,99 @@ public:
     bool isValid() const;
 
     /*!
-     * \brief   Gets user mapping ID
+     * \brief   Gets event's ID
      *
-     * \return  User mapping ID
+     * \return  Event's ID
      */
     qint64 id() const;
 
     /*!
-     * \brief   Sets user mapping new ID
+     * \brief   Sets event's new ID
      *
-     * \param   newId   User mapping new ID
+     * \param   newId   Event's new ID
      */
     void setId(const qint64 &newId);
 
     /*!
-     * \brief   Gets user group ID
+     * \brief   Gets event's timestamp
      *
-     * \return  User group ID
+     * \return  Event's timestamp
      */
-    qint64 userGroupId() const;
+    QDateTime timestamp() const;
 
     /*!
-     * \brief   Sets new user group ID
+     * \brief   Sets event's timestamp
      *
-     * \param   newUserGroupId  New user group ID
+     * \param   newTimestamp    New event's timestamp
      */
-    void setUserGroupId(const qint64 &newUserGroupId);
+    void setTimestamp(const QDateTime &newTimestamp);
 
     /*!
-     * \brief   Gets user ID
+     * \brief   Gets event's type
      *
-     * \return  User ID
+     * \return  Event's type
      */
-    qint64 userId() const;
+    Type type() const;
 
     /*!
-     * \brief   Sets new user ID
+     * \brief   Sets event's type
      *
-     * \param   newGroupId  New user ID
+     * \param   newType New event's type
      */
-    void setUserId(const qint64 &newUserId);
+    void setType(const Type &newType);
+
+    /*!
+     * \brief   Gets event's enable state
+     *
+     * \return  Event's enable state
+     */
+    bool isEnabled() const;
+
+    /*!
+     * \brief   Sets event's enable state
+     *
+     * \param   enabled     New event's enable state
+     */
+    void setEnabled(bool enabled);
 
     /*!
      * \brief   Creates an object from a map
      *
-     * \param   map     Map that contains the user mapping values
+     * \param   map     Map that contains the object's values
      *
      * \return  A new object
      *
      * \note    Created object is invalid if the values in the map cannot be used to create a valid
      *          object.
      */
-    static UserMappingInfo fromMap(const QMap<QString, QVariant> &map);
+    static Event fromMap(const QMap<QString, QVariant> &map);
 
 private:
     /*!
-     * \brief   Holds the user mapping ID
+     * \brief   Holds the event's ID
      */
     qint64 m_id;
 
     /*!
-     * \brief   Holds the user group ID
+     * \brief   Holds the event's timestamp
+     *
+     * \note    Timestamp is in UTC!
      */
-    qint64 m_userGroupId;
+    QDateTime m_timestamp;
 
     /*!
-     * \brief   Holds the user ID
+     * \brief   Holds the event's type
      */
-    qint64 m_userId;
+    Type m_type;
+
+    /*!
+     * \brief   Holds the event's enable state
+     */
+    bool m_enabled;
+
 };
 
 }
 }
 
-#endif // OPENTIMETRACKER_SERVER_USERMAPPINGINFO_HPP
+#endif // OPENTIMETRACKER_SERVER_EVENT_HPP

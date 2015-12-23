@@ -18,9 +18,9 @@
 using namespace OpenTimeTracker::Server;
 
 UserMappingInfo::UserMappingInfo()
-    : m_id(-1LL),
-      m_userGroupId(-1LL),
-      m_userId(-1LL)
+    : m_id(0LL),
+      m_userGroupId(0LL),
+      m_userId(0LL)
 {
 }
 
@@ -47,7 +47,7 @@ bool UserMappingInfo::isValid() const
 {
     bool valid = true;
 
-    if ((m_id < 0) || (m_userGroupId < 0) || (m_userId < 0))
+    if ((m_id < 1LL) || (m_userGroupId < 1LL) || (m_userId < 1LL))
     {
         valid = false;
     }

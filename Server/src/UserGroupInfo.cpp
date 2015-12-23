@@ -18,7 +18,7 @@
 using namespace OpenTimeTracker::Server;
 
 UserGroupInfo::UserGroupInfo()
-    : m_id(-1LL),
+    : m_id(0LL),
       m_name()
 {
 }
@@ -44,7 +44,7 @@ bool UserGroupInfo::isValid() const
 {
     bool valid = true;
 
-    if ((m_id < 0) || m_name.isEmpty())
+    if ((m_id < 1LL) || m_name.isEmpty())
     {
         valid = false;
     }
