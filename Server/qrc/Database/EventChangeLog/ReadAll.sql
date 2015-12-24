@@ -1,1 +1,2 @@
-SELECT * FROM EventChangeLog;
+SELECT * FROM EventChangeLog
+WHERE (eventId == :eventId);

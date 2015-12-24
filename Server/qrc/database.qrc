@@ -15,5 +15,7 @@
         <file>Database/EventChangeLog/CreateTable.sql</file>
         <file>Database/EventChangeLog/ReadAll.sql</file>
         <file>Database/Events/ReadTimeRange.sql</file>
+        <file>Database/Events/ReadSingle.sql</file>
+        <file>Database/Events/Update.sql</file>
     </qresource>
 </RCC>

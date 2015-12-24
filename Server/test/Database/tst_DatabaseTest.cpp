@@ -69,6 +69,16 @@ private Q_SLOTS:
     void testCaseAddEventFail();
     void testCaseReadEventsNonEmptyDatabase();
 
+    // Change event unit tests
+    void testCaseReadEventChangeLogUnchangedEvent();
+    void testCaseChangeEventTimestamp();
+    void testCaseChangeEventTimestampFail();
+    void testCaseChangeEventType();
+    void testCaseChangeEventTypeFail();
+    void testCaseChangeEventEnableState();
+    void testCaseChangeEventEnableStateFail();
+    void testCaseReadEventChangeLogChangedEvent();
+
 private:
     QString m_databaseFilePath;
 };
@@ -567,6 +577,183 @@ void DatabaseTest::testCaseReadEventsNonEmptyDatabase()
     QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
     QCOMPARE(events[0].userId(), 2LL);
     QCOMPARE(events[0].type(), OpenTimeTracker::Server::Event::Type_Started);
+}
+
+// Change event unit tests *************************************************************************
+
+void DatabaseTest::testCaseReadEventChangeLogUnchangedEvent()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QList<OpenTimeTracker::Server::EventChangeLogItem> eventChangeLog =
+            database.readEventChangeLog(1LL);
+
+    QVERIFY(eventChangeLog.isEmpty());
+}
+
+void DatabaseTest::testCaseChangeEventTimestamp()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Change event's timestamp
+    const qint64 eventId = 1LL;
+    const QDateTime newTimestamp(QDate(2015, 12, 23), QTime(20, 20, 00));
+
+    QVERIFY(database.changeEventTimestamp(eventId, newTimestamp, 1LL, "Changed timestamp"));
+
+    // Read event and check if the timestamp was really changed
+    const OpenTimeTracker::Server::Event event = database.readEvent(eventId);
+
+    QCOMPARE(event.timestamp(), newTimestamp);
+}
+
+void DatabaseTest::testCaseChangeEventTimestampFail()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Change to the same event's timestamp
+    const qint64 eventId = 1LL;
+    const QDateTime newTimestamp(QDate(2015, 12, 23), QTime(20, 20, 00));
+
+    QVERIFY(!database.changeEventTimestamp(eventId, newTimestamp, 1LL, "Same timestamp"));
+
+    // Invalid event's timestamp
+    QVERIFY(!database.changeEventTimestamp(eventId, QDateTime(), 1LL, "Invalid timestamp"));
+}
+
+void DatabaseTest::testCaseChangeEventType()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Change event's type
+    const qint64 eventId = 1LL;
+    const OpenTimeTracker::Server::Event::Type
+            newType(OpenTimeTracker::Server::Event::Type_OnBreak);
+
+    QVERIFY(database.changeEventType(eventId, newType, 1LL, "Changed type"));
+
+    // Read event and check if the type was really changed
+    const OpenTimeTracker::Server::Event event = database.readEvent(eventId);
+
+    QCOMPARE(event.type(), newType);
+}
+
+void DatabaseTest::testCaseChangeEventTypeFail()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Change to the same event's type
+    const qint64 eventId = 1LL;
+    const OpenTimeTracker::Server::Event::Type
+            newType(OpenTimeTracker::Server::Event::Type_OnBreak);
+
+    QVERIFY(!database.changeEventType(eventId, newType, 1LL, "Same type"));
+
+    // Invalid event's type
+    QVERIFY(!database.changeEventType(eventId,
+                                      OpenTimeTracker::Server::Event::Type_Invalid,
+                                      1LL,
+                                      "Invalid type"));
+}
+
+void DatabaseTest::testCaseChangeEventEnableState()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Change event's enable state
+    const qint64 eventId = 1LL;
+    bool newEnableState = false;
+
+    QVERIFY(database.changeEventEnableState(eventId, newEnableState, 1LL, "Changed enable state"));
+
+    // Read event and check if the enable state was really changed
+    const OpenTimeTracker::Server::Event event = database.readEvent(eventId);
+
+    QCOMPARE(event.isEnabled(), newEnableState);
+}
+
+void DatabaseTest::testCaseChangeEventEnableStateFail()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Change to the same event's enable state
+    const qint64 eventId = 1LL;
+    bool newEnableState = false;
+
+    QVERIFY(!database.changeEventEnableState(eventId, newEnableState, 1LL, "Same enable state"));
+}
+
+void DatabaseTest::testCaseReadEventChangeLogChangedEvent()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+    const qint64 eventId = 1LL;
+    const QList<OpenTimeTracker::Server::EventChangeLogItem> eventChangeLog =
+            database.readEventChangeLog(eventId);
+
+    QCOMPARE(eventChangeLog.size(), 3);
+
+    // Check changed timestamp
+    const QDateTime currentTime = QDateTime::currentDateTime();
+
+    QDateTime fromValueTimestamp = eventChangeLog[0].fromValue().toDateTime();
+    fromValueTimestamp.setTimeSpec(Qt::UTC);
+
+    QDateTime toValueTimestamp = eventChangeLog[0].toValue().toDateTime();
+    toValueTimestamp.setTimeSpec(Qt::UTC);
+
+    QCOMPARE(eventChangeLog[0].eventId(), eventId);
+    QVERIFY(eventChangeLog[0].timestamp().secsTo(currentTime) >= 0);
+    QVERIFY(eventChangeLog[0].timestamp().secsTo(currentTime) < 60);
+    QCOMPARE(eventChangeLog[0].fieldName(), QStringLiteral("timestamp"));
+    QCOMPARE(fromValueTimestamp, QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
+    QCOMPARE(toValueTimestamp, QDateTime(QDate(2015, 12, 23), QTime(20, 20, 00)));
+
+    // Check changed type
+    bool success = false;
+    OpenTimeTracker::Server::Event::Type fromValueType =
+            static_cast<OpenTimeTracker::Server::Event::Type>(
+                eventChangeLog[1].fromValue().toInt(&success));
+    QVERIFY(success);
+
+    success = false;
+    OpenTimeTracker::Server::Event::Type toValueType =
+            static_cast<OpenTimeTracker::Server::Event::Type>(
+                eventChangeLog[1].toValue().toInt(&success));
+    QVERIFY(success);
+
+    QCOMPARE(eventChangeLog[1].eventId(), eventId);
+    QVERIFY(eventChangeLog[1].timestamp().secsTo(currentTime) >= 0);
+    QVERIFY(eventChangeLog[1].timestamp().secsTo(currentTime) < 60);
+    QCOMPARE(eventChangeLog[1].fieldName(), QStringLiteral("type"));
+    QCOMPARE(fromValueType, OpenTimeTracker::Server::Event::Type_Started);
+    QCOMPARE(toValueType, OpenTimeTracker::Server::Event::Type_OnBreak);
+
+    // Check changed enable state
+    const bool fromValueEnableState = eventChangeLog[2].fromValue().toBool();
+    const bool toValueEnableState = eventChangeLog[2].toValue().toBool();
+
+    QCOMPARE(eventChangeLog[2].eventId(), eventId);
+    QVERIFY(eventChangeLog[2].timestamp().secsTo(currentTime) >= 0);
+    QVERIFY(eventChangeLog[2].timestamp().secsTo(currentTime) < 60);
+    QCOMPARE(eventChangeLog[2].fieldName(), QStringLiteral("enabled"));
+    QCOMPARE(fromValueEnableState, true);
+    QCOMPARE(toValueEnableState, false);
 }
 
 QTEST_APPLESS_MAIN(DatabaseTest)

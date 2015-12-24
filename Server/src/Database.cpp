@@ -357,6 +357,37 @@ bool Database::addEvent(const QDateTime &timestamp, const qint64 &userId, const 
     return success;
 }
 
+Event Database::readEvent(const qint64 &eventId)
+{
+    Event event;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(QStringLiteral("Events/ReadSingle.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command (timestamps in the database are stored in UTS)
+            QMap<QString, QVariant> values;
+            values[":id"] = eventId;
+
+            QList<QMap<QString, QVariant> > results;
+
+            if (executeSqlCommand(command, values, &results))
+            {
+                // Get event from the query
+                if (results.size() == 1)
+                {
+                    event = Event::fromMap(results.at(0));
+                }
+            }
+        }
+    }
+
+    return event;
+}
+
 QList<Event> Database::readEvents(const QDateTime &startTimestamp,
                                   const QDateTime &endTimestamp,
                                   const qint64 &userId)
@@ -405,17 +436,273 @@ QList<Event> Database::readEvents(const QDateTime &startTimestamp,
     return events;
 }
 
-bool Database::changeEvent(const qint64 &eventId,
-                           const QString &fieldName,
-                           const QVariant &newValue,
-                           const qint64 &userId,
-                           const QString &comment)
+bool Database::changeEventTimestamp(const qint64 &eventId,
+                                    const QDateTime &newTimestamp,
+                                    const qint64 &userId,
+                                    const QString &comment)
 {
-    bool success = false;
+    // Start transaction
+    bool success = QSqlDatabase::database().transaction();
 
-    // TODO: start transaction, read event, change event, insert event change log item, commit transaction
+    // Read event
+    Event event;
+
+    if (success)
+    {
+        event = readEvent(eventId);
+        success = event.isValid();
+    }
+
+    // Change event
+    if (success)
+    {
+        // Read command
+        QString command = readSqlCommandFromResource(QStringLiteral("Events/Update.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Replace the field name placeholder with the actual field name
+            command.replace(QStringLiteral("%fieldName%"), QStringLiteral("timestamp"));
+
+            // Execute SQL command
+            QMap<QString, QVariant> values;
+            values[":timestamp"] = newTimestamp.toUTC().toString(Qt::ISODate);
+            values[":id"] = event.id();
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    // Insert event change log item
+    if (success)
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(
+                                    QStringLiteral("EventChangeLog/Add.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            QMap<QString, QVariant> values;
+            values[":eventId"] = event.id();
+            values[":timestamp"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+            values[":fieldName"] = QStringLiteral("timestamp");
+            values[":fromValue"] = event.timestamp().toUTC().toString(Qt::ISODate);
+            values[":toValue"] = newTimestamp.toUTC().toString(Qt::ISODate);
+            values[":userId"] = userId;
+            values[":comment"] = comment;
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    // Finish the transaction
+    if (success)
+    {
+        // No error occurred, commit the transaction
+        success = QSqlDatabase::database().commit();
+    }
+    else
+    {
+        // On error rollback the transaction
+        QSqlDatabase::database().rollback();
+    }
 
     return success;
+}
+
+bool Database::changeEventType(const qint64 &eventId,
+                               const Event::Type &newType,
+                               const qint64 &userId,
+                               const QString &comment)
+{
+    // Start transaction
+    bool success = QSqlDatabase::database().transaction();
+
+    // Read event
+    Event event;
+
+    if (success)
+    {
+        event = readEvent(eventId);
+        success = event.isValid();
+    }
+
+    // Change event
+    if (success)
+    {
+        // Read command
+        QString command = readSqlCommandFromResource(QStringLiteral("Events/Update.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Replace the field name placeholder with the actual field name
+            command.replace(QStringLiteral("%fieldName%"), QStringLiteral("type"));
+
+            // Execute SQL command
+            QMap<QString, QVariant> values;
+            values[":type"] = static_cast<int>(newType);
+            values[":id"] = event.id();
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    // Insert event change log item
+    if (success)
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(
+                                    QStringLiteral("EventChangeLog/Add.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            QMap<QString, QVariant> values;
+            values[":eventId"] = event.id();
+            values[":timestamp"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+            values[":fieldName"] = QStringLiteral("type");
+            values[":fromValue"] = static_cast<int>(event.type());
+            values[":toValue"] = static_cast<int>(newType);
+            values[":userId"] = userId;
+            values[":comment"] = comment;
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    // Finish the transaction
+    if (success)
+    {
+        // No error occurred, commit the transaction
+        success = QSqlDatabase::database().commit();
+    }
+    else
+    {
+        // On error rollback the transaction
+        QSqlDatabase::database().rollback();
+    }
+
+    return success;
+}
+
+bool Database::changeEventEnableState(const qint64 &eventId,
+                                      const bool enable,
+                                      const qint64 &userId,
+                                      const QString &comment)
+{
+    // Start transaction
+    bool success = QSqlDatabase::database().transaction();
+
+    // Read event
+    Event event;
+
+    if (success)
+    {
+        event = readEvent(eventId);
+        success = event.isValid();
+    }
+
+    // Change event
+    if (success)
+    {
+        // Read command
+        QString command = readSqlCommandFromResource(QStringLiteral("Events/Update.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Replace the field name placeholder with the actual field name
+            command.replace(QStringLiteral("%fieldName%"), QStringLiteral("enabled"));
+
+            // Execute SQL command
+            QMap<QString, QVariant> values;
+            values[":enabled"] = enable;
+            values[":id"] = event.id();
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    // Insert event change log item
+    if (success)
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(
+                                    QStringLiteral("EventChangeLog/Add.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            QMap<QString, QVariant> values;
+            values[":eventId"] = event.id();
+            values[":timestamp"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+            values[":fieldName"] = QStringLiteral("enabled");
+            values[":fromValue"] = event.isEnabled();
+            values[":toValue"] = enable;
+            values[":userId"] = userId;
+            values[":comment"] = comment;
+
+            success = executeSqlCommand(command, values);
+        }
+    }
+
+    // Finish the transaction
+    if (success)
+    {
+        // No error occurred, commit the transaction
+        success = QSqlDatabase::database().commit();
+    }
+    else
+    {
+        // On error rollback the transaction
+        QSqlDatabase::database().rollback();
+    }
+
+    return success;
+}
+
+QList<EventChangeLogItem> Database::readEventChangeLog(const qint64 &eventId)
+{
+    QList<EventChangeLogItem> eventChangeLog;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(
+                                    QStringLiteral("EventChangeLog/ReadAll.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command (timestamps in the database are stored in UTS)
+            QMap<QString, QVariant> values;
+            values[":eventId"] = eventId;
+
+            QList<QMap<QString, QVariant> > results;
+
+            if (executeSqlCommand(command, values, &results))
+            {
+                // Get all event change log items from the query
+                for (int i = 0; i < results.size(); i++)
+                {
+                    EventChangeLogItem item = EventChangeLogItem::fromMap(results.at(i));
+
+                    if (item.isValid())
+                    {
+                        // Add item to list
+                        eventChangeLog.append(item);
+                    }
+                    else
+                    {
+                        // On error stop reading the results and clear them
+                        eventChangeLog.clear();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return eventChangeLog;
 }
 
 bool Database::initializePragmas()

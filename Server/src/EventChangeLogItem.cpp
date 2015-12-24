@@ -229,7 +229,16 @@ EventChangeLogItem EventChangeLogItem::fromMap(const QMap<QString, QVariant> &ma
 
             if (value.isValid() && (!value.isNull()))
             {
-                eventChangeLogItem.setFromValue(value);
+                if (eventChangeLogItem.fieldName() == QStringLiteral("timestamp"))
+                {
+                    QDateTime timestamp = value.toDateTime();
+                    timestamp.setTimeSpec(Qt::UTC);
+                    eventChangeLogItem.setFromValue(timestamp);
+                }
+                else
+                {
+                    eventChangeLogItem.setFromValue(value);
+                }
             }
             else
             {

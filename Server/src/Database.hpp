@@ -19,6 +19,7 @@
 #include <QtSql/QSqlDatabase>
 #include <QtCore/QVariant>
 #include "Event.hpp"
+#include "EventChangeLogItem.hpp"
 #include "User.hpp"
 #include "UserGroup.hpp"
 #include "UserMapping.hpp"
@@ -137,6 +138,16 @@ public:
     bool addEvent(const QDateTime &timestamp, const qint64 &userId, const Event::Type type);
 
     /*!
+     * \brief   Reads an specific event from the system
+     *
+     * \param   eventId     Event's ID
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    Event readEvent(const qint64 &eventId);
+
+    /*!
      * \brief   Reads events from the system for a specific time range and user
      *
      * \param   startTimestamp  Read events from and including this timestamp
@@ -150,11 +161,28 @@ public:
                             const qint64 &userId);
 
     /*!
-     * \brief   Changes a value in an event in the system
+     * \brief   Changes the timestamp in an event in the system
+     *
+     * \param   eventId         ID of the event to change
+     * \param   newTimestamp    New timestamp
+     * \param   userId          ID of the user that requested the change
+     * \param   comment         Explanation why the change was requested
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     *
+     * \note    Comment must not be empty
+     */
+    bool changeEventTimestamp(const qint64 &eventId,
+                              const QDateTime &newTimestamp,
+                              const qint64 &userId,
+                              const QString &comment);
+
+    /*!
+     * \brief   Changes the type in an event in the system
      *
      * \param   eventId     ID of the event to change
-     * \param   fieldName   Name of the field to change
-     * \param   newValue    New value
+     * \param   newType     New type
      * \param   userId      ID of the user that requested the change
      * \param   comment     Explanation why the change was requested
      *
@@ -163,11 +191,37 @@ public:
      *
      * \note    Comment must not be empty
      */
-    bool changeEvent(const qint64 &eventId,
-                     const QString &fieldName,
-                     const QVariant &newValue,
-                     const qint64 &userId,
-                     const QString &comment);
+    bool changeEventType(const qint64 &eventId,
+                         const Event::Type &newType,
+                         const qint64 &userId,
+                         const QString &comment);
+
+    /*!
+     * \brief   Changes the enable state in an event in the system
+     *
+     * \param   eventId     ID of the event to change
+     * \param   enable      New enable state
+     * \param   userId      ID of the user that requested the change
+     * \param   comment     Explanation why the change was requested
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     *
+     * \note    Comment must not be empty
+     */
+    bool changeEventEnableState(const qint64 &eventId,
+                                const bool enable,
+                                const qint64 &userId,
+                                const QString &comment);
+
+    /*!
+     * \brief   Reads event change log from the system for a specific event
+     *
+     * \param   eventId     Read event change log for the selected event
+     *
+     * \return  List of event change log items
+     */
+    QList<EventChangeLogItem> readEventChangeLog(const qint64 &eventId);
 
 private:
     /*!
