@@ -343,8 +343,9 @@ bool Database::addEvent(const QDateTime &timestamp, const qint64 &userId, const 
         // Execute command
         if (command.isEmpty() == false)
         {
+            // Store the timestamp in UTC in the database
             QMap<QString, QVariant> values;
-            values[":timestamp"] = timestamp;
+            values[":timestamp"] = timestamp.toUTC().toString(Qt::ISODate);
             values[":userId"] = userId;
             values[":type"] = static_cast<int>(type);
             values[":enabled"] = 1;
@@ -356,21 +357,29 @@ bool Database::addEvent(const QDateTime &timestamp, const qint64 &userId, const 
     return success;
 }
 
-QList<Event> Database::readAllEvents()
+QList<Event> Database::readEvents(const QDateTime &startTimestamp,
+                                  const QDateTime &endTimestamp,
+                                  const qint64 &userId)
 {
     QList<Event> events;
 
     if (isConnected())
     {
         // Read command
-        const QString command = readSqlCommandFromResource(QStringLiteral("Events/ReadAll.sql"));
+        const QString command = readSqlCommandFromResource(
+                                    QStringLiteral("Events/ReadTimeRange.sql"));
 
         if (command.isEmpty() == false)
         {
-            // Execute SQL command
+            // Execute SQL command (timestamps in the database are stored in UTS)
+            QMap<QString, QVariant> values;
+            values[":startTimestamp"] = startTimestamp.toUTC().toString(Qt::ISODate);
+            values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
+            values[":userId"] = userId;
+
             QList<QMap<QString, QVariant> > results;
 
-            if (executeSqlCommand(command, QMap<QString, QVariant>(), &results))
+            if (executeSqlCommand(command, values, &results))
             {
                 // Get all events from the query
                 for (int i = 0; i < results.size(); i++)

@@ -28,7 +28,7 @@ public:
     DatabaseTest();
 
 private Q_SLOTS:
-    // Init and cleanup
+    // Initialization and cleanup
     void initTestCase();
     void cleanupTestCase();
 
@@ -62,12 +62,12 @@ private Q_SLOTS:
     void testCaseReadAllUserMappingsNonEmptyDatabase();
 
     // Event unit tests
-    void testCaseReadAllEventsEmptyDatabase();
+    void testCaseReadEventsEmptyDatabase();
     void testCaseAddEvent_data();
     void testCaseAddEvent();
     void testCaseAddEventFail_data();
     void testCaseAddEventFail();
-    void testCaseReadAllEventsNonEmptyDatabase();
+    void testCaseReadEventsNonEmptyDatabase();
 
 private:
     QString m_databaseFilePath;
@@ -78,7 +78,7 @@ DatabaseTest::DatabaseTest()
 {
 }
 
-// Init and cleanup ********************************************************************************
+// Initialization and cleanup **********************************************************************
 
 void DatabaseTest::initTestCase()
 {
@@ -400,13 +400,16 @@ void DatabaseTest::testCaseReadAllUserMappingsNonEmptyDatabase()
 
 // Event unit tests ********************************************************************************
 
-void DatabaseTest::testCaseReadAllEventsEmptyDatabase()
+void DatabaseTest::testCaseReadEventsEmptyDatabase()
 {
     OpenTimeTracker::Server::Database database;
 
     QVERIFY(database.connect(m_databaseFilePath));
 
-    QList<OpenTimeTracker::Server::Event> events = database.readAllEvents();
+    QList<OpenTimeTracker::Server::Event> events =
+            database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(0, 00, 00)),
+                                QDateTime(QDate(2015, 12, 23), QTime(23, 59, 59)),
+                                1LL);
 
     QVERIFY(events.isEmpty());
 }
@@ -417,17 +420,32 @@ void DatabaseTest::testCaseAddEvent_data()
     QTest::addColumn<qint64>("userId");
     QTest::addColumn<OpenTimeTracker::Server::Event::Type>("type");
 
-    QTest::newRow("1") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00), Qt::UTC)
+    // User 1
+    QTest::newRow("1") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
                        << 1LL
                        << OpenTimeTracker::Server::Event::Type_Started;
-    QTest::newRow("2") << QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00), Qt::UTC)
+    QTest::newRow("2") << QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00))
                        << 1LL
                        << OpenTimeTracker::Server::Event::Type_OnBreak;
-    QTest::newRow("3") << QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00), Qt::UTC)
+    QTest::newRow("3") << QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00))
                        << 1LL
                        << OpenTimeTracker::Server::Event::Type_FromBreak;
-    QTest::newRow("4") << QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00), Qt::UTC)
+    QTest::newRow("4") << QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00))
                        << 1LL
+                       << OpenTimeTracker::Server::Event::Type_Finished;
+
+    // User 2
+    QTest::newRow("5") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
+                       << 2LL
+                       << OpenTimeTracker::Server::Event::Type_Started;
+    QTest::newRow("6") << QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00))
+                       << 2LL
+                       << OpenTimeTracker::Server::Event::Type_OnBreak;
+    QTest::newRow("7") << QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00))
+                       << 2LL
+                       << OpenTimeTracker::Server::Event::Type_FromBreak;
+    QTest::newRow("8") << QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00))
+                       << 2LL
                        << OpenTimeTracker::Server::Event::Type_Finished;
 }
 
@@ -454,12 +472,15 @@ void DatabaseTest::testCaseAddEventFail_data()
     QTest::newRow("1") << QDateTime() << 1LL << OpenTimeTracker::Server::Event::Type_Started;
 
     // Invalid user ID
-    QTest::newRow("2") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00), Qt::UTC)
+    QTest::newRow("2") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
                        << 0LL
+                       << OpenTimeTracker::Server::Event::Type_Started;
+    QTest::newRow("3") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
+                       << 3LL
                        << OpenTimeTracker::Server::Event::Type_Started;
 
     // Invalid type
-    QTest::newRow("3") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00), Qt::UTC)
+    QTest::newRow("4") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
                        << 1LL
                        << OpenTimeTracker::Server::Event::Type_Invalid;
 }
@@ -477,35 +498,75 @@ void DatabaseTest::testCaseAddEventFail()
     QVERIFY(!database.addEvent(timestamp, userId, type));
 }
 
-void DatabaseTest::testCaseReadAllEventsNonEmptyDatabase()
+void DatabaseTest::testCaseReadEventsNonEmptyDatabase()
 {
     OpenTimeTracker::Server::Database database;
 
     QVERIFY(database.connect(m_databaseFilePath));
+    QList<OpenTimeTracker::Server::Event> events;
 
-    QList<OpenTimeTracker::Server::Event> events = database.readAllEvents();
+    // User 1 *****
 
-    QCOMPARE(events.size(), 4);
+    // Time range before events
+    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(0, 00, 00)),
+                                 QDateTime(QDate(2015, 12, 23), QTime(21, 19, 59)),
+                                 1LL);
 
-    // Event 1
-    QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00), Qt::UTC));
+    QVERIFY(events.isEmpty());
+
+    // Time range for only one event
+    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
+                                 QDateTime(QDate(2015, 12, 23), QTime(21, 20, 01)),
+                                 1LL);
+
+    QCOMPARE(events.size(), 1);
+
+    QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
     QCOMPARE(events[0].userId(), 1LL);
     QCOMPARE(events[0].type(), OpenTimeTracker::Server::Event::Type_Started);
 
-    // Event 2
-    QCOMPARE(events[1].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00), Qt::UTC));
+    // Time range for all events
+    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
+                                 QDateTime(QDate(2015, 12, 23), QTime(21, 23, 01)),
+                                 1LL);
+
+    QCOMPARE(events.size(), 4);
+
+    QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
+    QCOMPARE(events[0].userId(), 1LL);
+    QCOMPARE(events[0].type(), OpenTimeTracker::Server::Event::Type_Started);
+
+    QCOMPARE(events[1].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00)));
     QCOMPARE(events[1].userId(), 1LL);
     QCOMPARE(events[1].type(), OpenTimeTracker::Server::Event::Type_OnBreak);
 
-    // Event 3
-    QCOMPARE(events[2].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00), Qt::UTC));
+    QCOMPARE(events[2].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00)));
     QCOMPARE(events[2].userId(), 1LL);
     QCOMPARE(events[2].type(), OpenTimeTracker::Server::Event::Type_FromBreak);
 
-    // Event 4
-    QCOMPARE(events[3].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00), Qt::UTC));
+    QCOMPARE(events[3].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00)));
     QCOMPARE(events[3].userId(), 1LL);
     QCOMPARE(events[3].type(), OpenTimeTracker::Server::Event::Type_Finished);
+
+    // Time range after events
+    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 23, 01)),
+                                 QDateTime(QDate(2015, 12, 23), QTime(23, 59, 59)),
+                                 1LL);
+
+    QVERIFY(events.isEmpty());
+
+    // User 2 *****
+
+    // Just check if an event for user 2 can be read
+    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
+                                 QDateTime(QDate(2015, 12, 23), QTime(21, 20, 01)),
+                                 2LL);
+
+    QCOMPARE(events.size(), 1);
+
+    QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
+    QCOMPARE(events[0].userId(), 2LL);
+    QCOMPARE(events[0].type(), OpenTimeTracker::Server::Event::Type_Started);
 }
 
 QTEST_APPLESS_MAIN(DatabaseTest)

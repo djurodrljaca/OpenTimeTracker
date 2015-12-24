@@ -86,8 +86,6 @@ public:
      * \brief   Gets event's timestamp
      *
      * \return  Event's timestamp
-     *
-     * \note    Timestamp is in UTC
      */
     QDateTime timestamp() const;
 
@@ -95,8 +93,6 @@ public:
      * \brief   Sets event's timestamp
      *
      * \param   newTimestamp    New event's timestamp
-     *
-     * \note    Timestamp will be converted to UTC before it is stored
      */
     void setTimestamp(const QDateTime &newTimestamp);
 
@@ -162,8 +158,6 @@ private:
 
     /*!
      * \brief   Holds the event's timestamp
-     *
-     * \note    Timestamp is in UTC
      */
     QDateTime m_timestamp;
 

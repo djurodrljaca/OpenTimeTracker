@@ -11,9 +11,9 @@
         <file>Database/UserMapping/ReadAll.sql</file>
         <file>Database/Events/Add.sql</file>
         <file>Database/Events/CreateTable.sql</file>
-        <file>Database/Events/ReadAll.sql</file>
         <file>Database/EventChangeLog/Add.sql</file>
         <file>Database/EventChangeLog/CreateTable.sql</file>
         <file>Database/EventChangeLog/ReadAll.sql</file>
+        <file>Database/Events/ReadTimeRange.sql</file>
     </qresource>
 </RCC>

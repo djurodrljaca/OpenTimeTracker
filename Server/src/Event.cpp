@@ -78,7 +78,7 @@ QDateTime Event::timestamp() const
 
 void Event::setTimestamp(const QDateTime &newTimestamp)
 {
-    m_timestamp = newTimestamp.toUTC();
+    m_timestamp = newTimestamp;
 }
 
 qint64 Event::userId() const
@@ -142,9 +142,11 @@ Event Event::fromMap(const QMap<QString, QVariant> &map)
 
             if (value.canConvert<QString>())
             {
+                // Since timestamp in the database is stored in UTC it is converted to local time
+                // here before it is stored to the event
                 QDateTime timestamp = QDateTime::fromString(value.toString(), Qt::ISODate);
                 timestamp.setTimeSpec(Qt::UTC);
-                event.setTimestamp(timestamp);
+                event.setTimestamp(timestamp.toLocalTime());
             }
             else
             {

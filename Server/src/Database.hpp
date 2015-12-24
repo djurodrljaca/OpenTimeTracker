@@ -137,12 +137,17 @@ public:
     bool addEvent(const QDateTime &timestamp, const qint64 &userId, const Event::Type type);
 
     /*!
-     * \brief   Reads all events from the system
+     * \brief   Reads events from the system for a specific time range and user
+     *
+     * \param   startTimestamp  Read events from and including this timestamp
+     * \param   endTimestamp    Read events up to and including this timestamp
+     * \param   userId          Read events for the selected user
      *
      * \return  List of events
      */
-    QList<Event> readAllEvents();
-    // TODO: add search parameters? (time range, user ID)
+    QList<Event> readEvents(const QDateTime &startTimestamp,
+                            const QDateTime &endTimestamp,
+                            const qint64 &userId);
 
     /*!
      * \brief   Changes a value in an event in the system
