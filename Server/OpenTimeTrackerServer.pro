@@ -15,7 +15,8 @@ SOURCES += src/main.cpp \
     src/EventChangeLogItem.cpp \
     src/UserGroup.cpp \
     src/User.cpp \
-    src/UserMapping.cpp
+    src/UserMapping.cpp \
+    src/TimeTracker.cpp
 
 HEADERS += \
     src/Database.hpp \
@@ -23,7 +24,8 @@ HEADERS += \
     src/EventChangeLogItem.hpp \
     src/UserGroup.hpp \
     src/User.hpp \
-    src/UserMapping.hpp
+    src/UserMapping.hpp \
+    src/TimeTracker.hpp
 
 RESOURCES += \
     qrc/database.qrc

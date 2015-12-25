@@ -32,13 +32,16 @@ namespace Server
 class Event
 {
 public:
+    /*!
+     * \brief   Defines the type of event
+     */
     enum Type
     {
-        Type_Invalid = 0,
-        Type_Started,
-        Type_OnBreak,
-        Type_FromBreak,
-        Type_Finished
+        Type_Invalid = 0,   /*!< Invalid type */
+        Type_Started,       /*!< Started working */
+        Type_OnBreak,       /*!< Went on break */
+        Type_FromBreak,     /*!< Returned from break */
+        Type_Finished       /*!< Finished working */
     };
 
     /*!
