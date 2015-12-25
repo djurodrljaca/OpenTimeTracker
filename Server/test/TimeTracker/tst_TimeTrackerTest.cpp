@@ -26,10 +26,8 @@ public:
 
 private Q_SLOTS:
     void testCaseUserId();
-
     void testCaseValid();
     void testCaseInvalid();
-
     void testCaseNotWorking();
     void testCaseNotWorkingFail();
     void testCaseWorking();
@@ -41,6 +39,7 @@ private Q_SLOTS:
     void testCaseNormalFlow();
     void testCaseNormalFlowDoubleBreak();
     void testCaseNormalFlowDoubleAll();
+    void testCaseResetState();
 };
 
 TimeTrackerTest::TimeTrackerTest()
@@ -57,11 +56,28 @@ void TimeTrackerTest::testCaseUserId()
     QCOMPARE(timeTracker.userId(), userId);
 }
 
+void TimeTrackerTest::testCaseValid()
+{
+    OpenTimeTracker::Server::TimeTracker timeTracker;
+
+    timeTracker.setUserId(1LL);
+    QVERIFY(timeTracker.isValid());
+}
+
+void TimeTrackerTest::testCaseInvalid()
+{
+    OpenTimeTracker::Server::TimeTracker timeTracker;
+
+    timeTracker.setUserId(0LL);
+    QVERIFY(!timeTracker.isValid());
+}
+
 void TimeTrackerTest::testCaseNotWorking()
 {
     OpenTimeTracker::Server::TimeTracker timeTracker;
     timeTracker.setUserId(1LL);
 
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
     QCOMPARE(timeTracker.workingTime(), 0);
     QCOMPARE(timeTracker.breakTime(), 0);
 }
@@ -71,6 +87,7 @@ void TimeTrackerTest::testCaseNotWorkingFail()
     OpenTimeTracker::Server::TimeTracker timeTracker;
     timeTracker.setUserId(1LL);
 
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
     const QDateTime timestamp = QDateTime::currentDateTime();
 
     // Check for failure
@@ -89,6 +106,7 @@ void TimeTrackerTest::testCaseWorking()
     const qint32 offset = 5 * 60;
     const QDateTime timestamp = QDateTime::currentDateTime().addSecs(-offset);
     QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Check working and break times
     const qint32 workingTime = timeTracker.workingTime();
@@ -110,6 +128,7 @@ void TimeTrackerTest::testCaseWorkingFail()
     // Start working (1 min before current time)
     const QDateTime timestampWorking = timestamp.addSecs(-60);
     QVERIFY(timeTracker.startWorking(timestampWorking));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Check for failure
     QVERIFY(!timeTracker.startWorking(timestamp));
@@ -118,6 +137,8 @@ void TimeTrackerTest::testCaseWorkingFail()
     QVERIFY(!timeTracker.endBreak(timestamp));
     QVERIFY(!timeTracker.stopWorking(QDateTime()));
     QVERIFY(!timeTracker.startBreak(timestampWorking.addSecs(-1)));
+
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 }
 
 void TimeTrackerTest::testCaseOnBreak()
@@ -131,11 +152,13 @@ void TimeTrackerTest::testCaseOnBreak()
     const qint32 offsetWorking = 10 * 60;
     const QDateTime timestampWorking = currentTimestamp.addSecs(-offsetWorking);
     QVERIFY(timeTracker.startWorking(timestampWorking));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break (5 min before current time)
     const qint32 offsetBreak = 5 * 60;
     const QDateTime timestampBreak = currentTimestamp.addSecs(-offsetBreak);
     QVERIFY(timeTracker.startBreak(timestampBreak));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // Check working and break times
     const qint32 workingTime = timeTracker.workingTime();
@@ -157,10 +180,12 @@ void TimeTrackerTest::testCaseOnBreakFail()
     // Start working (2 min before current time)
     const QDateTime timestampWorking = timestamp.addSecs(-120);
     QVERIFY(timeTracker.startWorking(timestampWorking));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break (1 min before current time)
     const QDateTime timestampBreak = timestamp.addSecs(-60);
     QVERIFY(timeTracker.startBreak(timestampBreak));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // Check for failure
     QVERIFY(!timeTracker.startWorking(timestamp));
@@ -168,6 +193,8 @@ void TimeTrackerTest::testCaseOnBreakFail()
     QVERIFY(!timeTracker.endBreak(QDateTime()));
     QVERIFY(!timeTracker.endBreak(timestampBreak.addSecs(-1)));
     QVERIFY(!timeTracker.stopWorking(timestamp));
+
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 }
 
 void TimeTrackerTest::testCaseFromBreak()
@@ -181,16 +208,19 @@ void TimeTrackerTest::testCaseFromBreak()
     const qint32 offsetWorking = 15 * 60;
     const QDateTime timestampWorking = currentTimestamp.addSecs(-offsetWorking);
     QVERIFY(timeTracker.startWorking(timestampWorking));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break (10 min before current time)
     const qint32 offsetOnBreak = 10 * 60;
     const QDateTime timestampOnBreak = currentTimestamp.addSecs(-offsetOnBreak);
     QVERIFY(timeTracker.startBreak(timestampOnBreak));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // End break (5 min before current time)
     const qint32 offsetFromBreak = 5 * 60;
     const QDateTime timestampFromBreak = currentTimestamp.addSecs(-offsetFromBreak);
     QVERIFY(timeTracker.endBreak(timestampFromBreak));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Check working and break times
     const qint32 workingTime = timeTracker.workingTime();
@@ -214,14 +244,17 @@ void TimeTrackerTest::testCaseFromBreakFail()
     // Start working (3 min before current time)
     const QDateTime timestampWorking = timestamp.addSecs(-180);
     QVERIFY(timeTracker.startWorking(timestampWorking));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break (2 min before current time)
     const QDateTime timestampOnBreak = timestamp.addSecs(-120);
     QVERIFY(timeTracker.startBreak(timestampOnBreak));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // End break (1 min before current time)
     const QDateTime timestampFromBreak = timestamp.addSecs(-60);
     QVERIFY(timeTracker.endBreak(timestampFromBreak));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Check for failure
     QVERIFY(!timeTracker.startWorking(timestamp));
@@ -230,6 +263,8 @@ void TimeTrackerTest::testCaseFromBreakFail()
     QVERIFY(!timeTracker.endBreak(timestamp));
     QVERIFY(!timeTracker.stopWorking(QDateTime()));
     QVERIFY(!timeTracker.stopWorking(timestampFromBreak.addSecs(-1)));
+
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 }
 
 void TimeTrackerTest::testCaseNormalFlow()
@@ -240,18 +275,22 @@ void TimeTrackerTest::testCaseNormalFlow()
     // Start working
     QDateTime timestamp = QDateTime::currentDateTime();
     QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // End break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Stop working 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.stopWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
 
     // Check cumulative times
     QCOMPARE(timeTracker.workingTime(), 10 * 60);
@@ -266,26 +305,32 @@ void TimeTrackerTest::testCaseNormalFlowDoubleBreak()
     // Start working
     QDateTime timestamp = QDateTime::currentDateTime();
     QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // End break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // End break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Stop working 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.stopWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
 
     // Check cumulative times
     QCOMPARE(timeTracker.workingTime(), 15 * 60);
@@ -302,40 +347,93 @@ void TimeTrackerTest::testCaseNormalFlowDoubleAll()
     // Start working
     QDateTime timestamp = QDateTime::currentDateTime();
     QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // End break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Stop working 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.stopWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
 
     // Second normal flow
 
     // Start working 30 min later
     timestamp = timestamp.addSecs(30 * 60);
     QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Start break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // End break 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
     // Stop working 5 min later
     timestamp = timestamp.addSecs(5 * 60);
     QVERIFY(timeTracker.stopWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
 
     // Check cumulative times
     QCOMPARE(timeTracker.workingTime(), 20 * 60);
     QCOMPARE(timeTracker.breakTime(), 10 * 60);
+}
+
+void TimeTrackerTest::testCaseResetState()
+{
+    OpenTimeTracker::Server::TimeTracker timeTracker;
+    timeTracker.setUserId(1LL);
+
+    // Start working
+    QDateTime timestamp = QDateTime::currentDateTime();
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break 5 min later
+    timestamp = timestamp.addSecs(5 * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break 5 min later
+    timestamp = timestamp.addSecs(5 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Stop working 5 min later
+    timestamp = timestamp.addSecs(5 * 60);
+    QVERIFY(timeTracker.stopWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+
+    // Check cumulative times
+    QCOMPARE(timeTracker.workingTime(), 10 * 60);
+    QCOMPARE(timeTracker.breakTime(), 5 * 60);
+
+    // Start working again (state needs to be something other than "not working")
+    timestamp = timestamp.addSecs(5 * 60);
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Reset state
+    timeTracker.resetState();
+
+    // Check if state was really reset
+    QVERIFY(timeTracker.isValid());
+    QCOMPARE(timeTracker.userId(), 1LL);
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+    QCOMPARE(timeTracker.workingTime(), 0);
+    QCOMPARE(timeTracker.breakTime(), 0);
 }
 
 QTEST_APPLESS_MAIN(TimeTrackerTest)

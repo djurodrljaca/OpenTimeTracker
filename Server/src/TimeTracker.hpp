@@ -102,13 +102,13 @@ public:
     State state() const;
 
     /*!
-     * \brief   Clears the internal state
+     * \brief   Resets the internal state
      *
      * This should be called at the start of work day.
      *
      * For example if each work day starts at midnight, then this should be called at midnight.
      */
-    void clear();
+    void resetState();
 
     /*!
      * \brief   Starts tracking users working time

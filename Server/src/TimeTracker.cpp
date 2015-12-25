@@ -131,7 +131,7 @@ TimeTracker::State TimeTracker::state() const
     return m_state;
 }
 
-void TimeTracker::clear()
+void TimeTracker::resetState()
 {
     m_workingTime = 0;
     m_breakTime = 0;
