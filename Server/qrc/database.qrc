@@ -17,5 +17,11 @@
         <file>Database/Events/ReadTimeRange.sql</file>
         <file>Database/Events/ReadSingle.sql</file>
         <file>Database/Events/Update.sql</file>
+        <file>Database/Settings/Add.sql</file>
+        <file>Database/Settings/CreateTable.sql</file>
+        <file>Database/Settings/ReadSingle.sql</file>
+        <file>Database/Settings/Remove.sql</file>
+        <file>Database/Settings/Update.sql</file>
+        <file>Database/Settings/ReadAll.sql</file>
     </qresource>
 </RCC>

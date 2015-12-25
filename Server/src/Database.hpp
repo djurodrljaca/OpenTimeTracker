@@ -71,6 +71,26 @@ public:
     void disconnect();
 
     /*!
+     * \brief   Writes a setting to the system
+     *
+     * \param   name    Name of the setting
+     * \param   value   Value of the setting
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     *
+     * Setting is inserted if it doesn't exist, but if it exists it is updated if necessary
+     */
+    bool writeSetting(const QString &name, const QVariant &value);
+
+    /*!
+     * \brief   Reads settings from the system
+     *
+     * \return  Settings
+     */
+    QMap<QString, QVariant> readSettings();
+
+    /*!
      * \brief   Adds a new user to the system
      *
      * \param   name        User's name

@@ -79,6 +79,9 @@ private Q_SLOTS:
     void testCaseChangeEventEnableStateFail();
     void testCaseReadEventChangeLogChangedEvent();
 
+    // Settings unit tests
+    // TODO: implement!
+
 private:
     QString m_databaseFilePath;
 };

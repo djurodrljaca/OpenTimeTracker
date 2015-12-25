@@ -141,6 +141,112 @@ void Database::disconnect()
     }
 }
 
+bool Database::writeSetting(const QString &name, const QVariant &value)
+{
+    bool success = false;
+
+    if (isConnected())
+    {
+        // First try to read the setting
+        QList<QMap<QString, QVariant> > settings;
+
+        {
+            // Read command
+            const QString command = readSqlCommandFromResource(
+                                        QStringLiteral("Settings/ReadSingle.sql"));
+
+            if (command.isEmpty() == false)
+            {
+                // Execute SQL command
+                QMap<QString, QVariant> values;
+                values[":name"] = name;
+
+                success = executeSqlCommand(command, values, &settings);
+            }
+        }
+
+        // Check if the setting should be inserted or updated
+        if (success)
+        {
+            // Get appropriate command
+            QString command;
+
+            if (settings.isEmpty())
+            {
+                // Insert a new setting
+                command = readSqlCommandFromResource(QStringLiteral("Settings/Add.sql"));
+                success = !command.isEmpty();
+            }
+            else
+            {
+                // Check if setting needs to be updated
+                const QMap<QString, QVariant> &item = settings.at(0);
+
+                if (item["value"] != value)
+                {
+                    // Update the setting
+                    command = readSqlCommandFromResource(QStringLiteral("Settings/Update.sql"));
+                    success = !command.isEmpty();
+                }
+            }
+
+            // Check if command needs to be executed
+            if (success && (!command.isEmpty()))
+            {
+                // Execute SQL command
+                QMap<QString, QVariant> values;
+                values[":name"] = name;
+                values[":value"] = value;
+
+                success = executeSqlCommand(command, values, &settings);
+            }
+        }
+    }
+
+    return success;
+}
+
+QMap<QString, QVariant> Database::readSettings()
+{
+    QMap<QString, QVariant> settings;
+
+    if (isConnected())
+    {
+        // Read command
+        const QString command = readSqlCommandFromResource(QStringLiteral("Settings/ReadAll.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            QList<QMap<QString, QVariant> > results;
+
+            if (executeSqlCommand(command, QMap<QString, QVariant>(), &results))
+            {
+                // Get all settings from the query
+                for (int i = 0; i < results.size(); i++)
+                {
+                    const QMap<QString, QVariant> &item = results.at(i);
+
+                    if (item.contains("name") && item.contains("value"))
+                    {
+                        // Get setting
+                        const QString name = item["name"].toString();
+                        settings[name] = item["value"];
+                    }
+                    else
+                    {
+                        // Error, item doesn't contain all of the needed information
+                        settings.clear();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return settings;
+}
+
 bool Database::addUser(const QString &name, const QString &password)
 {
     bool success = false;
@@ -368,7 +474,7 @@ Event Database::readEvent(const qint64 &eventId)
 
         if (command.isEmpty() == false)
         {
-            // Execute SQL command (timestamps in the database are stored in UTS)
+            // Execute SQL command
             QMap<QString, QVariant> values;
             values[":id"] = eventId;
 
@@ -402,7 +508,7 @@ QList<Event> Database::readEvents(const QDateTime &startTimestamp,
 
         if (command.isEmpty() == false)
         {
-            // Execute SQL command (timestamps in the database are stored in UTS)
+            // Execute SQL command (timestamps in the database are stored in UTC)
             QMap<QString, QVariant> values;
             values[":startTimestamp"] = startTimestamp.toUTC().toString(Qt::ISODate);
             values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
@@ -673,7 +779,7 @@ QList<EventChangeLogItem> Database::readEventChangeLog(const qint64 &eventId)
 
         if (command.isEmpty() == false)
         {
-            // Execute SQL command (timestamps in the database are stored in UTS)
+            // Execute SQL command
             QMap<QString, QVariant> values;
             values[":eventId"] = eventId;
 
@@ -721,8 +827,14 @@ bool Database::initialize()
 
     if (isConnected())
     {
+        // Create table: Settings
+        success = createTable(QStringLiteral("Settings"));
+
         // Create table: Users
-        success = createTable(QStringLiteral("Users"));
+        if (success)
+        {
+            success = createTable(QStringLiteral("Users"));
+        }
 
         // Create table: UserGroups
         if (success)
