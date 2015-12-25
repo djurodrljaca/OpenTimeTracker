@@ -80,17 +80,22 @@ void TimeTracker::setUserId(const qint64 &newUserId)
 
 qint32 TimeTracker::workingTime() const
 {
-    qint32 workingTime = m_workingTime;
+    qint32 workingTime = 0;
 
-    if (m_state == State_Working)
+    if (isValid())
     {
-        if (m_stateChangedTimestamp.isValid())
+        workingTime = m_workingTime;
+
+        if (m_state == State_Working)
         {
-            workingTime += m_stateChangedTimestamp.secsTo(QDateTime::currentDateTime());
-        }
-        else
-        {
-            workingTime = -1;
+            if (m_stateChangedTimestamp.isValid())
+            {
+                workingTime += m_stateChangedTimestamp.secsTo(QDateTime::currentDateTime());
+            }
+            else
+            {
+                workingTime = -1;
+            }
         }
     }
 
@@ -99,17 +104,22 @@ qint32 TimeTracker::workingTime() const
 
 qint32 TimeTracker::breakTime() const
 {
-    qint32 breakTime = m_breakTime;
+    qint32 breakTime = 0;
 
-    if (m_state == State_OnBreak)
+    if (isValid())
     {
-        if (m_stateChangedTimestamp.isValid())
+        breakTime = m_breakTime;
+
+        if (m_state == State_OnBreak)
         {
-            breakTime += m_stateChangedTimestamp.secsTo(QDateTime::currentDateTime());
-        }
-        else
-        {
-            breakTime = -1;
+            if (m_stateChangedTimestamp.isValid())
+            {
+                breakTime += m_stateChangedTimestamp.secsTo(QDateTime::currentDateTime());
+            }
+            else
+            {
+                breakTime = -1;
+            }
         }
     }
 
@@ -134,12 +144,16 @@ bool TimeTracker::startWorking(const QDateTime &timestamp)
     bool success = false;
 
     // Check current state
-    if (m_state == State_NotWorking)
+    if ((isValid()) && (m_state == State_NotWorking))
     {
-        // Start tracking users work time
-        m_state = State_Working;
-        m_stateChangedTimestamp = timestamp;
-        success = true;
+        // Check if timestamp is valid
+        if (timestamp.isValid())
+        {
+            // Start tracking users work time
+            m_state = State_Working;
+            m_stateChangedTimestamp = timestamp;
+            success = true;
+        }
     }
 
     return success;
@@ -150,10 +164,10 @@ bool TimeTracker::startBreak(const QDateTime &timestamp)
     bool success = false;
 
     // Check current state
-    if (m_state == State_Working)
+    if ((isValid()) && (m_state == State_Working))
     {
         // Check if timestamp comes after the time user started working
-        if (timestamp > m_stateChangedTimestamp)
+        if ((timestamp.isValid()) && (timestamp >= m_stateChangedTimestamp))
         {
             // Add latest working time interval to the cumulative working time
             m_workingTime += m_stateChangedTimestamp.secsTo(timestamp);
@@ -173,10 +187,10 @@ bool TimeTracker::endBreak(const QDateTime &timestamp)
     bool success = false;
 
     // Check current state
-    if (m_state == State_OnBreak)
+    if ((isValid()) && (m_state == State_OnBreak))
     {
         // Check if timestamp comes after the time user started their break
-        if (timestamp > m_stateChangedTimestamp)
+        if ((timestamp.isValid()) && (timestamp >= m_stateChangedTimestamp))
         {
             // Add latest break time interval to the cumulative break time
             m_breakTime += m_stateChangedTimestamp.secsTo(timestamp);
@@ -196,10 +210,10 @@ bool TimeTracker::stopWorking(const QDateTime &timestamp)
     bool success = false;
 
     // Check current state
-    if (m_state == State_Working)
+    if ((isValid()) && (m_state == State_Working))
     {
         // Check if timestamp comes after the time user started working
-        if (timestamp > m_stateChangedTimestamp)
+        if ((timestamp.isValid()) && (timestamp >= m_stateChangedTimestamp))
         {
             // Add latest working time interval to the cumulative working time
             m_workingTime += m_stateChangedTimestamp.secsTo(timestamp);

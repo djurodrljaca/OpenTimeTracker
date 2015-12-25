@@ -22,6 +22,7 @@ HEADERS += \
     ../../src/User.hpp \
     ../../src/UserGroup.hpp \
     ../../src/UserMapping.hpp
+
 SOURCES += \
     tst_DatabaseTest.cpp \
     ../../src/Database.cpp \
@@ -35,3 +36,7 @@ RESOURCES += \
     ../../qrc/database.qrc
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
+
+DESTDIR = build
+OBJECTS_DIR = build
+MOC_DIR = build

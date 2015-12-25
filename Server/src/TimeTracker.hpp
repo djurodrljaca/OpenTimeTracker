@@ -16,7 +16,7 @@
 #ifndef OPENTIMETRACKER_SERVER_TIMETRACKER_HPP
 #define OPENTIMETRACKER_SERVER_TIMETRACKER_HPP
 
-#include "Database.hpp"
+#include <QDateTime>
 
 namespace OpenTimeTracker
 {
