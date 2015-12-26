@@ -13,8 +13,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENTIMETRACKER_SERVER_DATABASE_DATABASE_HPP
-#define OPENTIMETRACKER_SERVER_DATABASE_DATABASE_HPP
+#ifndef OPENTIMETRACKER_SERVER_DATABASE_DATABASEMANAGEMENT_HPP
+#define OPENTIMETRACKER_SERVER_DATABASE_DATABASEMANAGEMENT_HPP
 
 #include <QtSql/QSqlDatabase>
 #include <QtCore/QVariant>
@@ -228,4 +228,4 @@ private:
 }
 }
 
-#endif // OPENTIMETRACKER_SERVER_DATABASE_DATABASE_HPP
+#endif // OPENTIMETRACKER_SERVER_DATABASE_DATABASEMANAGEMENT_HPP

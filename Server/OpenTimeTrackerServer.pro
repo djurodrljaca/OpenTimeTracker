@@ -28,10 +28,10 @@ HEADERS += \
     src/User.hpp \
     src/UserMapping.hpp \
     src/TimeTracker.hpp \
-    src/Database/Database.hpp \
     src/Database/EventManagement.hpp \
-    src/Database/SettingManagement.hpp \
-    src/Database/UserManagement.hpp
+    src/Database/UserManagement.hpp \
+    src/Database/DatabaseManagement.hpp \
+    src/Database/SettingsManagement.hpp
 
 RESOURCES += \
     qrc/database.qrc
