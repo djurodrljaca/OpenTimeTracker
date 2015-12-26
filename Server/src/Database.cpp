@@ -206,7 +206,7 @@ bool Database::writeSetting(const QString &name, const QVariant &value)
     return success;
 }
 
-QMap<QString, QVariant> Database::readSettings()
+QMap<QString, QVariant> Database::readAllSettings()
 {
     QMap<QString, QVariant> settings;
 

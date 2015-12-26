@@ -131,7 +131,7 @@ TimeTracker::State TimeTracker::state() const
     return m_state;
 }
 
-void TimeTracker::resetState()
+bool TimeTracker::initializeWorkday(const QDateTime &startOfWorkday, const QDateTime &endOfWorkday)
 {
     m_workingTime = 0;
     m_breakTime = 0;

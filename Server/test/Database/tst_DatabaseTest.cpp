@@ -80,7 +80,13 @@ private Q_SLOTS:
     void testCaseReadEventChangeLogChangedEvent();
 
     // Settings unit tests
-    // TODO: implement!
+    void testCaseReadAllSettingsEmptyDatabase();
+    void testCaseAddSetting_data();
+    void testCaseAddSetting();
+    void testCaseAddSettingFail_data();
+    void testCaseAddSettingFail();
+    // TODO: change setting
+    void testCaseReadAllSettingsNonEmptyDatabase();
 
 private:
     QString m_databaseFilePath;
@@ -723,7 +729,7 @@ void DatabaseTest::testCaseReadEventChangeLogChangedEvent()
     QCOMPARE(eventChangeLog[0].eventId(), eventId);
     QVERIFY(eventChangeLog[0].timestamp().secsTo(currentTime) >= 0);
     QVERIFY(eventChangeLog[0].timestamp().secsTo(currentTime) < 60);
-    QCOMPARE(eventChangeLog[0].fieldName(), QStringLiteral("timestamp"));
+    QCOMPARE(eventChangeLog[0].fieldName(), QString("timestamp"));
     QCOMPARE(fromValueTimestamp, QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
     QCOMPARE(toValueTimestamp, QDateTime(QDate(2015, 12, 23), QTime(20, 20, 00)));
 
@@ -743,7 +749,7 @@ void DatabaseTest::testCaseReadEventChangeLogChangedEvent()
     QCOMPARE(eventChangeLog[1].eventId(), eventId);
     QVERIFY(eventChangeLog[1].timestamp().secsTo(currentTime) >= 0);
     QVERIFY(eventChangeLog[1].timestamp().secsTo(currentTime) < 60);
-    QCOMPARE(eventChangeLog[1].fieldName(), QStringLiteral("type"));
+    QCOMPARE(eventChangeLog[1].fieldName(), QString("type"));
     QCOMPARE(fromValueType, OpenTimeTracker::Server::Event::Type_Started);
     QCOMPARE(toValueType, OpenTimeTracker::Server::Event::Type_OnBreak);
 
@@ -754,9 +760,90 @@ void DatabaseTest::testCaseReadEventChangeLogChangedEvent()
     QCOMPARE(eventChangeLog[2].eventId(), eventId);
     QVERIFY(eventChangeLog[2].timestamp().secsTo(currentTime) >= 0);
     QVERIFY(eventChangeLog[2].timestamp().secsTo(currentTime) < 60);
-    QCOMPARE(eventChangeLog[2].fieldName(), QStringLiteral("enabled"));
+    QCOMPARE(eventChangeLog[2].fieldName(), QString("enabled"));
     QCOMPARE(fromValueEnableState, true);
     QCOMPARE(toValueEnableState, false);
+}
+
+// Setting unit tests ******************************************************************************
+
+void DatabaseTest::testCaseReadAllSettingsEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QMap<QString, QVariant> settings = database.readAllSettings();
+
+    QVERIFY(settings.isEmpty());
+}
+
+void DatabaseTest::testCaseAddSetting_data()
+{
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<QVariant>("value");
+
+    QTest::newRow("1") << "setting1" << QVariant::fromValue(QString("stringValue"));
+    QTest::newRow("2") << "setting2" << QVariant::fromValue(123);
+}
+
+void DatabaseTest::testCaseAddSetting()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Add setting
+    QFETCH(QString, name);
+    QFETCH(QVariant, value);
+    // TODO: change to addSetting()
+    QVERIFY(database.writeSetting(name, value));
+}
+
+void DatabaseTest::testCaseAddSettingFail_data()
+{
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<QVariant>("value");
+
+    // Invalid name
+    QTest::newRow("1") << QString() << QVariant::fromValue(QString());
+    QTest::newRow("2") << "" << QVariant::fromValue(QString());
+
+    // Existing name
+    QTest::newRow("3") << "setting1" << QVariant::fromValue(QString("newStringValue"));
+}
+
+void DatabaseTest::testCaseAddSettingFail()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    // Add setting
+    QFETCH(QString, name);
+    QFETCH(QVariant, value);
+    // TODO: change to addSetting()
+    QVERIFY(!database.writeSetting(name, value));
+}
+
+void DatabaseTest::testCaseReadAllSettingsNonEmptyDatabase()
+{
+    OpenTimeTracker::Server::Database database;
+
+    QVERIFY(database.connect(m_databaseFilePath));
+
+    QMap<QString, QVariant> settings = database.readAllSettings();
+
+    QCOMPARE(settings.size(), 2);
+
+    // Setting 1
+    QVERIFY(settings.contains("setting1"));
+    QCOMPARE(settings["setting1"], QVariant::fromValue(QString("stringValue")));
+
+    // Setting 2
+    QVERIFY(settings.contains("setting2"));
+    QCOMPARE(settings["setting2"], QVariant::fromValue(123));
+
 }
 
 QTEST_APPLESS_MAIN(DatabaseTest)

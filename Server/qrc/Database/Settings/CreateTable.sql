@@ -5,7 +5,6 @@ CREATE TABLE Settings (
     value
 );
 
-
 CREATE INDEX index_Settings_name ON Settings (
     name
 );

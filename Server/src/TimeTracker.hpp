@@ -102,13 +102,29 @@ public:
     State state() const;
 
     /*!
-     * \brief   Resets the internal state
+     * \brief   Initializes the workday
      *
-     * This should be called at the start of work day.
+     * \param   startOfWorkday  Start of the current workday
+     * \param   endOfWorkday    End of the current workday
      *
-     * For example if each work day starts at midnight, then this should be called at midnight.
+     * \retval  true    Success
+     * \retval  false   Error
+     *
+     * This should be called at the start of work day or when the server is started.
+     *
+     * Examples:
+     * - If each workday starts at midnight, then this should be called at midnight.
+     *
+     * - If server was started in the middle of the workday then this should be called and the
+     *   events for this workday should be put throgh this object to get the current state of the
+     *   user.
+     *
+     * \note    Working and break times, state and timestamp of the last state change are all
+     *          cleared.
+     *
+     * \todo    Also set the schedule? And events for this workday?
      */
-    void resetState();
+    bool initializeWorkday(const QDateTime &startOfWorkday, const QDateTime &endOfWorkday);
 
     /*!
      * \brief   Starts tracking users working time
@@ -165,6 +181,16 @@ private:
     qint64 m_userId;
 
     /*!
+     * \brief   Holds the start of the workday
+     */
+    QDateTime m_startOfWorkday;
+
+    /*!
+     * \brief   Holds the end of the workday
+     */
+    QDateTime m_endOfWorkday;
+
+    /*!
      * \brief   Holds the current working time (in seconds)
      */
     qint32 m_workingTime;
@@ -184,7 +210,9 @@ private:
      */
     QDateTime m_stateChangedTimestamp;
 
+    // TODO: add totalWorkingTime() that includes the (allowed) break
     // TODO: add work schedule?
+    // TODO: update and extend the unit tests!
 };
 
 }

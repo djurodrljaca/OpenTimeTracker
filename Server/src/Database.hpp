@@ -82,13 +82,14 @@ public:
      * Setting is inserted if it doesn't exist, but if it exists it is updated if necessary
      */
     bool writeSetting(const QString &name, const QVariant &value);
+    // TODO: split into "add" and "change"?
 
     /*!
-     * \brief   Reads settings from the system
+     * \brief   Reads all settings from the system
      *
      * \return  Settings
      */
-    QMap<QString, QVariant> readSettings();
+    QMap<QString, QVariant> readAllSettings();
 
     /*!
      * \brief   Adds a new user to the system
@@ -100,6 +101,10 @@ public:
      * \retval  false   Error
      */
     bool addUser(const QString &name, const QString &password);
+    // TODO: implement changeUserName();
+    // TODO: implement changeUserPassword();
+    // TODO: implement enableUser();
+    // TODO: implement disableUser();
 
     /*!
      * \brief   Reads all users from the system
@@ -117,6 +122,7 @@ public:
      * \retval  false   Error
      */
     bool addUserGroup(const QString &name);
+    // TODO: implement changeUserGroupName();
 
     /*!
      * \brief   Reads all user groups from the system
@@ -360,6 +366,8 @@ private:
      *          is introduced.
      */
     static const qint32 m_version;
+
+    // TODO: split into multiple classes
 };
 
 }
