@@ -16,10 +16,10 @@ SOURCES += src/main.cpp \
     src/User.cpp \
     src/UserMapping.cpp \
     src/TimeTracker.cpp \
-    src/Database/Database.cpp \
     src/Database/EventManagement.cpp \
-    src/Database/SettingManagement.cpp \
-    src/Database/UserManagement.cpp
+    src/Database/UserManagement.cpp \
+    src/Database/DatabaseManagement.cpp \
+    src/Database/SettingsManagement.cpp
 
 HEADERS += \
     src/Event.hpp \
