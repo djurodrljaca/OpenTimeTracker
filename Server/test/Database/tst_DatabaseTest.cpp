@@ -16,7 +16,10 @@
 #include <QString>
 #include <QtTest>
 #include <QFile>
-#include "../../src/Database.hpp"
+#include "../../src/Database/DatabaseManagement.hpp"
+#include "../../src/Database/EventManagement.hpp"
+#include "../../src/Database/SettingsManagement.hpp"
+#include "../../src/Database/UserManagement.hpp"
 
 Q_DECLARE_METATYPE(OpenTimeTracker::Server::Event::Type)
 
@@ -32,34 +35,41 @@ private Q_SLOTS:
     void initTestCase();
     void cleanupTestCase();
 
+
+    // TODO: check below if any tests need to be added, removed or modified!
+
+
     // Connection unit tests
     void testCaseConnect();
     void testCaseDisconnect();
     void testCaseReconnect();
 
     // User unit tests
-    void testCaseReadAllUsersEmptyDatabase();
+    void testCaseReadUsersEmptyDatabase();
     void testCaseAddUser_data();
     void testCaseAddUser();
     void testCaseAddUserFail_data();
     void testCaseAddUserFail();
-    void testCaseReadAllUsersNonEmptyDatabase();
+    // TODO: change user: name, password, enable state
+    void testCaseReadUsersNonEmptyDatabase();
 
     // User group unit tests
-    void testCaseReadAllUserGroupsEmptyDatabase();
+    void testCaseReadUserGroupsEmptyDatabase();
     void testCaseAddUserGroup_data();
     void testCaseAddUserGroup();
     void testCaseAddUserGroupFail_data();
     void testCaseAddUserGroupFail();
-    void testCaseReadAllUserGroupsNonEmptyDatabase();
+    // TODO: change user group name
+    void testCaseReadUserGroupsNonEmptyDatabase();
 
     // User mapping unit tests
-    void testCaseReadAllUserMappingsEmptyDatabase();
+    void testCaseReadUserMappingsEmptyDatabase();
     void testCaseAddUserMapping_data();
     void testCaseAddUserMapping();
     void testCaseAddUserMappingFail_data();
     void testCaseAddUserMappingFail();
-    void testCaseReadAllUserMappingsNonEmptyDatabase();
+    // TODO: remove user mapping
+    void testCaseReadUserMappingsNonEmptyDatabase();
 
     // Event unit tests
     void testCaseReadEventsEmptyDatabase();
@@ -80,16 +90,17 @@ private Q_SLOTS:
     void testCaseReadEventChangeLogChangedEvent();
 
     // Settings unit tests
-    void testCaseReadAllSettingsEmptyDatabase();
-    void testCaseAddSetting_data();
-    void testCaseAddSetting();
+    void testCaseReadSettingsEmptyDatabase();
+    void testCaseAddSettings();
     void testCaseAddSettingFail_data();
     void testCaseAddSettingFail();
     // TODO: change setting
-    void testCaseReadAllSettingsNonEmptyDatabase();
+    void testCaseReadSettingsNonEmptyDatabase();
 
 private:
-    QString m_databaseFilePath;
+    void removeDatabaseFile();
+
+    const QString m_databaseFilePath;
 };
 
 DatabaseTest::DatabaseTest()
@@ -99,90 +110,105 @@ DatabaseTest::DatabaseTest()
 
 // Initialization and cleanup **********************************************************************
 
-void DatabaseTest::initTestCase()
+void DatabaseTest::removeDatabaseFile()
 {
+    using namespace OpenTimeTracker::Server::Database;
+
+    if (DatabaseManagement::isConnected())
+    {
+        DatabaseManagement::disconnect();
+    }
+
     if (QFile::exists(m_databaseFilePath))
     {
         QVERIFY2(QFile::remove(m_databaseFilePath), "Database not removed");
     }
 }
 
+void DatabaseTest::initTestCase()
+{
+    removeDatabaseFile();
+}
+
 void DatabaseTest::cleanupTestCase()
 {
-    if (QFile::exists(m_databaseFilePath))
-    {
-        QVERIFY2(QFile::remove(m_databaseFilePath), "Database not removed");
-    }
+    removeDatabaseFile();
 }
 
 // Connection unit tests ***************************************************************************
 
 void DatabaseTest::testCaseConnect()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
     // Initially it has to be disconnected
-    QCOMPARE(database.isConnected(), false);
+    QCOMPARE(DatabaseManagement::isConnected(), false);
 
     // Connecting should be successful
-    QVERIFY(database.connect(m_databaseFilePath));
+    QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
 
     // Check if really connected
-    QCOMPARE(database.isConnected(), true);
+    QCOMPARE(DatabaseManagement::isConnected(), true);
 }
 
 void DatabaseTest::testCaseDisconnect()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
-    // Initially it has to be disconnected
-    QCOMPARE(database.isConnected(), false);
-
-    // Connecting should be successful
-    QVERIFY(database.connect(m_databaseFilePath));
-
-    // Check if really connected
-    QCOMPARE(database.isConnected(), true);
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Disconnect
-    database.disconnect();
+    DatabaseManagement::disconnect();
 
     // Check if really disconnected
-    QCOMPARE(database.isConnected(), false);
+    QCOMPARE(DatabaseManagement::isConnected(), false);
 }
 
 void DatabaseTest::testCaseReconnect()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
-    // Initially it has to be disconnected
-    QCOMPARE(database.isConnected(), false);
-
-    // Connecting should be successful
-    QVERIFY(database.connect(m_databaseFilePath));
-
-    // Check if really connected
-    QCOMPARE(database.isConnected(), true);
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Disconnect
-    database.disconnect();
+    DatabaseManagement::disconnect();
 
     // Check if really disconnected
-    QCOMPARE(database.isConnected(), false);
+    QCOMPARE(DatabaseManagement::isConnected(), false);
 
     // Reconnecting should be successful
-    QVERIFY(database.connect(m_databaseFilePath));
+    QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+
+    // Check if really connected
+    QCOMPARE(DatabaseManagement::isConnected(), true);
 }
 
 // User unit tests *********************************************************************************
 
-void DatabaseTest::testCaseReadAllUsersEmptyDatabase()
+void DatabaseTest::testCaseReadUsersEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QList<OpenTimeTracker::Server::User> users = database.readAllUsers();
+    // Read users
+    QList<User> users = UserManagement::readUsers();
 
     QVERIFY(users.isEmpty());
 }
@@ -198,14 +224,19 @@ void DatabaseTest::testCaseAddUser_data()
 
 void DatabaseTest::testCaseAddUser()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add user
     QFETCH(QString, name);
     QFETCH(QString, password);
-    QVERIFY(database.addUser(name, password));
+    QVERIFY(UserManagement::addUser(name, password));
 }
 
 void DatabaseTest::testCaseAddUserFail_data()
@@ -220,32 +251,41 @@ void DatabaseTest::testCaseAddUserFail_data()
     // Existing name
     QTest::newRow("3") << "user1" << "333";
 
-    // Invalid password
-    QTest::newRow("4") << "user4" << "";
-
     // Existing password
-    QTest::newRow("5") << "user6" << "111";
+    QTest::newRow("4") << "user6" << "111";
 }
 
 void DatabaseTest::testCaseAddUserFail()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add user
     QFETCH(QString, name);
     QFETCH(QString, password);
-    QVERIFY(!database.addUser(name, password));
+    QVERIFY(!UserManagement::addUser(name, password));
 }
 
-void DatabaseTest::testCaseReadAllUsersNonEmptyDatabase()
+void DatabaseTest::testCaseReadUsersNonEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QList<OpenTimeTracker::Server::User> users = database.readAllUsers();
+    // Read users
+    QList<User> users = UserManagement::readUsers();
 
     QCOMPARE(users.size(), 2);
 
@@ -260,13 +300,20 @@ void DatabaseTest::testCaseReadAllUsersNonEmptyDatabase()
 
 // User group unit tests ***************************************************************************
 
-void DatabaseTest::testCaseReadAllUserGroupsEmptyDatabase()
+void DatabaseTest::testCaseReadUserGroupsEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QList<OpenTimeTracker::Server::UserGroup> userGroups = database.readAllUserGroups();
+    // Read user groups
+    QList<UserGroup> userGroups = UserManagement::readUserGroups();
 
     QVERIFY(userGroups.isEmpty());
 }
@@ -281,13 +328,18 @@ void DatabaseTest::testCaseAddUserGroup_data()
 
 void DatabaseTest::testCaseAddUserGroup()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add user group
     QFETCH(QString, name);
-    QVERIFY(database.addUserGroup(name));
+    QVERIFY(UserManagement::addUserGroup(name));
 }
 
 void DatabaseTest::testCaseAddUserGroupFail_data()
@@ -304,22 +356,34 @@ void DatabaseTest::testCaseAddUserGroupFail_data()
 
 void DatabaseTest::testCaseAddUserGroupFail()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add user group
     QFETCH(QString, name);
-    QVERIFY(!database.addUserGroup(name));
+    QVERIFY(!UserManagement::addUserGroup(name));
 }
 
-void DatabaseTest::testCaseReadAllUserGroupsNonEmptyDatabase()
+void DatabaseTest::testCaseReadUserGroupsNonEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QList<OpenTimeTracker::Server::UserGroup> userGroups = database.readAllUserGroups();
+    // Read user groups
+    QList<UserGroup> userGroups = UserManagement::readUserGroups();
 
     QCOMPARE(userGroups.size(), 2);
 
@@ -332,13 +396,20 @@ void DatabaseTest::testCaseReadAllUserGroupsNonEmptyDatabase()
 
 // User mapping unit tests *************************************************************************
 
-void DatabaseTest::testCaseReadAllUserMappingsEmptyDatabase()
+void DatabaseTest::testCaseReadUserMappingsEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QList<OpenTimeTracker::Server::UserMapping> userMappings = database.readAllUserMappings();
+    // Read user mappings
+    QList<UserMapping> userMappings = UserManagement::readUserMappings();
 
     QVERIFY(userMappings.isEmpty());
 }
@@ -358,14 +429,19 @@ void DatabaseTest::testCaseAddUserMapping_data()
 
 void DatabaseTest::testCaseAddUserMapping()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add user mapping
     QFETCH(qint64, userGroupId);
     QFETCH(qint64, userId);
-    QVERIFY(database.addUserMapping(userGroupId, userId));
+    QVERIFY(UserManagement::addUserMapping(userGroupId, userId));
 }
 
 void DatabaseTest::testCaseAddUserMappingFail_data()
@@ -384,23 +460,35 @@ void DatabaseTest::testCaseAddUserMappingFail_data()
 
 void DatabaseTest::testCaseAddUserMappingFail()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add user mapping
     QFETCH(qint64, userGroupId);
     QFETCH(qint64, userId);
-    QVERIFY(!database.addUserMapping(userGroupId, userId));
+    QVERIFY(!UserManagement::addUserMapping(userGroupId, userId));
 }
 
-void DatabaseTest::testCaseReadAllUserMappingsNonEmptyDatabase()
+void DatabaseTest::testCaseReadUserMappingsNonEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QList<OpenTimeTracker::Server::UserMapping> userMappings = database.readAllUserMappings();
+    // Read user mappings
+    QList<UserMapping> userMappings = UserManagement::readUserMappings();
 
     QCOMPARE(userMappings.size(), 3);
 
@@ -421,299 +509,381 @@ void DatabaseTest::testCaseReadAllUserMappingsNonEmptyDatabase()
 
 void DatabaseTest::testCaseReadEventsEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QList<OpenTimeTracker::Server::Event> events =
-            database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(0, 00, 00)),
-                                QDateTime(QDate(2015, 12, 23), QTime(23, 59, 59)),
-                                1LL);
+    // Read events
+    QList<Event> events = EventManagement::readEvents(
+                              QDateTime(QDate(2015, 12, 23), QTime(0, 00, 00)),
+                              QDateTime(QDate(2015, 12, 23), QTime(23, 59, 59)),
+                              1LL);
 
     QVERIFY(events.isEmpty());
 }
 
 void DatabaseTest::testCaseAddEvent_data()
 {
+    using namespace OpenTimeTracker::Server;
+
     QTest::addColumn<QDateTime>("timestamp");
     QTest::addColumn<qint64>("userId");
-    QTest::addColumn<OpenTimeTracker::Server::Event::Type>("type");
+    QTest::addColumn<Event::Type>("type");
 
     // User 1
     QTest::newRow("1") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
                        << 1LL
-                       << OpenTimeTracker::Server::Event::Type_Started;
+                       << Event::Type_Started;
     QTest::newRow("2") << QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00))
                        << 1LL
-                       << OpenTimeTracker::Server::Event::Type_OnBreak;
+                       << Event::Type_OnBreak;
     QTest::newRow("3") << QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00))
                        << 1LL
-                       << OpenTimeTracker::Server::Event::Type_FromBreak;
+                       << Event::Type_FromBreak;
     QTest::newRow("4") << QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00))
                        << 1LL
-                       << OpenTimeTracker::Server::Event::Type_Finished;
+                       << Event::Type_Finished;
 
     // User 2
     QTest::newRow("5") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
                        << 2LL
-                       << OpenTimeTracker::Server::Event::Type_Started;
+                       << Event::Type_Started;
     QTest::newRow("6") << QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00))
                        << 2LL
-                       << OpenTimeTracker::Server::Event::Type_OnBreak;
+                       << Event::Type_OnBreak;
     QTest::newRow("7") << QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00))
                        << 2LL
-                       << OpenTimeTracker::Server::Event::Type_FromBreak;
+                       << Event::Type_FromBreak;
     QTest::newRow("8") << QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00))
                        << 2LL
-                       << OpenTimeTracker::Server::Event::Type_Finished;
+                       << Event::Type_Finished;
 }
 
 void DatabaseTest::testCaseAddEvent()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add event
     QFETCH(QDateTime, timestamp);
     QFETCH(qint64, userId);
-    QFETCH(OpenTimeTracker::Server::Event::Type, type);
-    QVERIFY(database.addEvent(timestamp, userId, type));
+    QFETCH(Event::Type, type);
+    QVERIFY(EventManagement::addEvent(timestamp, userId, type));
 }
 
 void DatabaseTest::testCaseAddEventFail_data()
 {
+    using namespace OpenTimeTracker::Server;
+
     QTest::addColumn<QDateTime>("timestamp");
     QTest::addColumn<qint64>("userId");
-    QTest::addColumn<OpenTimeTracker::Server::Event::Type>("type");
+    QTest::addColumn<Event::Type>("type");
 
     // Invalid timestamp
-    QTest::newRow("1") << QDateTime() << 1LL << OpenTimeTracker::Server::Event::Type_Started;
+    QTest::newRow("1") << QDateTime() << 1LL << Event::Type_Started;
 
     // Invalid user ID
     QTest::newRow("2") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
                        << 0LL
-                       << OpenTimeTracker::Server::Event::Type_Started;
+                       << Event::Type_Started;
     QTest::newRow("3") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
                        << 3LL
-                       << OpenTimeTracker::Server::Event::Type_Started;
+                       << Event::Type_Started;
 
     // Invalid type
     QTest::newRow("4") << QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00))
                        << 1LL
-                       << OpenTimeTracker::Server::Event::Type_Invalid;
+                       << Event::Type_Invalid;
 }
 
 void DatabaseTest::testCaseAddEventFail()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add event
     QFETCH(QDateTime, timestamp);
     QFETCH(qint64, userId);
-    QFETCH(OpenTimeTracker::Server::Event::Type, type);
-    QVERIFY(!database.addEvent(timestamp, userId, type));
+    QFETCH(Event::Type, type);
+    QVERIFY(!EventManagement::addEvent(timestamp, userId, type));
 }
 
 void DatabaseTest::testCaseReadEventsNonEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
-    QList<OpenTimeTracker::Server::Event> events;
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // User 1 *****
 
     // Time range before events
-    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(0, 00, 00)),
-                                 QDateTime(QDate(2015, 12, 23), QTime(21, 19, 59)),
-                                 1LL);
+    QList<Event> events;
+    events = EventManagement::readEvents(QDateTime(QDate(2015, 12, 23), QTime(0, 00, 00)),
+                                         QDateTime(QDate(2015, 12, 23), QTime(21, 19, 59)),
+                                         1LL);
 
     QVERIFY(events.isEmpty());
 
     // Time range for only one event
-    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
-                                 QDateTime(QDate(2015, 12, 23), QTime(21, 20, 01)),
-                                 1LL);
+    events = EventManagement::readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
+                                         QDateTime(QDate(2015, 12, 23), QTime(21, 20, 01)),
+                                         1LL);
 
     QCOMPARE(events.size(), 1);
 
     QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
     QCOMPARE(events[0].userId(), 1LL);
-    QCOMPARE(events[0].type(), OpenTimeTracker::Server::Event::Type_Started);
+    QCOMPARE(events[0].type(), Event::Type_Started);
 
     // Time range for all events
-    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
-                                 QDateTime(QDate(2015, 12, 23), QTime(21, 23, 01)),
-                                 1LL);
+    events = EventManagement::readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
+                                         QDateTime(QDate(2015, 12, 23), QTime(21, 23, 01)),
+                                         1LL);
 
     QCOMPARE(events.size(), 4);
 
     QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
     QCOMPARE(events[0].userId(), 1LL);
-    QCOMPARE(events[0].type(), OpenTimeTracker::Server::Event::Type_Started);
+    QCOMPARE(events[0].type(), Event::Type_Started);
 
     QCOMPARE(events[1].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 21, 00)));
     QCOMPARE(events[1].userId(), 1LL);
-    QCOMPARE(events[1].type(), OpenTimeTracker::Server::Event::Type_OnBreak);
+    QCOMPARE(events[1].type(), Event::Type_OnBreak);
 
     QCOMPARE(events[2].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 22, 00)));
     QCOMPARE(events[2].userId(), 1LL);
-    QCOMPARE(events[2].type(), OpenTimeTracker::Server::Event::Type_FromBreak);
+    QCOMPARE(events[2].type(), Event::Type_FromBreak);
 
     QCOMPARE(events[3].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 23, 00)));
     QCOMPARE(events[3].userId(), 1LL);
-    QCOMPARE(events[3].type(), OpenTimeTracker::Server::Event::Type_Finished);
+    QCOMPARE(events[3].type(), Event::Type_Finished);
 
     // Time range after events
-    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 23, 01)),
-                                 QDateTime(QDate(2015, 12, 23), QTime(23, 59, 59)),
-                                 1LL);
+    events = EventManagement::readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 23, 01)),
+                                         QDateTime(QDate(2015, 12, 23), QTime(23, 59, 59)),
+                                         1LL);
 
     QVERIFY(events.isEmpty());
 
     // User 2 *****
 
     // Just check if an event for user 2 can be read
-    events = database.readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
-                                 QDateTime(QDate(2015, 12, 23), QTime(21, 20, 01)),
-                                 2LL);
+    events = EventManagement::readEvents(QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)),
+                                         QDateTime(QDate(2015, 12, 23), QTime(21, 20, 01)),
+                                         2LL);
 
     QCOMPARE(events.size(), 1);
 
     QCOMPARE(events[0].timestamp(), QDateTime(QDate(2015, 12, 23), QTime(21, 20, 00)));
     QCOMPARE(events[0].userId(), 2LL);
-    QCOMPARE(events[0].type(), OpenTimeTracker::Server::Event::Type_Started);
+    QCOMPARE(events[0].type(), Event::Type_Started);
 }
 
 // Change event unit tests *************************************************************************
 
 void DatabaseTest::testCaseReadEventChangeLogUnchangedEvent()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QList<OpenTimeTracker::Server::EventChangeLogItem> eventChangeLog =
-            database.readEventChangeLog(1LL);
+    // Read event change log
+    QList<EventChangeLogItem> eventChangeLog = EventManagement::readEventChangeLog(1LL);
 
     QVERIFY(eventChangeLog.isEmpty());
 }
 
 void DatabaseTest::testCaseChangeEventTimestamp()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Change event's timestamp
     const qint64 eventId = 1LL;
     const QDateTime newTimestamp(QDate(2015, 12, 23), QTime(20, 20, 00));
 
-    QVERIFY(database.changeEventTimestamp(eventId, newTimestamp, 1LL, "Changed timestamp"));
+    QVERIFY(EventManagement::changeEventTimestamp(eventId, newTimestamp, 1LL, "Changed timestamp"));
 
     // Read event and check if the timestamp was really changed
-    const OpenTimeTracker::Server::Event event = database.readEvent(eventId);
+    const Event event = EventManagement::readEvent(eventId);
 
     QCOMPARE(event.timestamp(), newTimestamp);
 }
 
 void DatabaseTest::testCaseChangeEventTimestampFail()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Change to the same event's timestamp
     const qint64 eventId = 1LL;
     const QDateTime newTimestamp(QDate(2015, 12, 23), QTime(20, 20, 00));
 
-    QVERIFY(!database.changeEventTimestamp(eventId, newTimestamp, 1LL, "Same timestamp"));
+    QVERIFY(!EventManagement::changeEventTimestamp(eventId, newTimestamp, 1LL, "Same timestamp"));
 
     // Invalid event's timestamp
-    QVERIFY(!database.changeEventTimestamp(eventId, QDateTime(), 1LL, "Invalid timestamp"));
+    QVERIFY(!EventManagement::changeEventTimestamp(eventId, QDateTime(), 1LL, "Invalid timestamp"));
 }
 
 void DatabaseTest::testCaseChangeEventType()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Change event's type
     const qint64 eventId = 1LL;
-    const OpenTimeTracker::Server::Event::Type
-            newType(OpenTimeTracker::Server::Event::Type_OnBreak);
+    const Event::Type newType(Event::Type_OnBreak);
 
-    QVERIFY(database.changeEventType(eventId, newType, 1LL, "Changed type"));
+    QVERIFY(EventManagement::changeEventType(eventId, newType, 1LL, "Changed type"));
 
     // Read event and check if the type was really changed
-    const OpenTimeTracker::Server::Event event = database.readEvent(eventId);
+    const Event event = EventManagement::readEvent(eventId);
 
     QCOMPARE(event.type(), newType);
 }
 
 void DatabaseTest::testCaseChangeEventTypeFail()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Change to the same event's type
     const qint64 eventId = 1LL;
-    const OpenTimeTracker::Server::Event::Type
-            newType(OpenTimeTracker::Server::Event::Type_OnBreak);
+    const Event::Type newType(Event::Type_OnBreak);
 
-    QVERIFY(!database.changeEventType(eventId, newType, 1LL, "Same type"));
+    QVERIFY(!EventManagement::changeEventType(eventId, newType, 1LL, "Same type"));
 
     // Invalid event's type
-    QVERIFY(!database.changeEventType(eventId,
-                                      OpenTimeTracker::Server::Event::Type_Invalid,
-                                      1LL,
-                                      "Invalid type"));
+    QVERIFY(!EventManagement::changeEventType(eventId,
+                                              Event::Type_Invalid,
+                                              1LL,
+                                              "Invalid type"));
 }
 
 void DatabaseTest::testCaseChangeEventEnableState()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Change event's enable state
     const qint64 eventId = 1LL;
     bool newEnableState = false;
 
-    QVERIFY(database.changeEventEnableState(eventId, newEnableState, 1LL, "Changed enable state"));
+    QVERIFY(EventManagement::changeEventEnableState(eventId,
+                                                    newEnableState,
+                                                    1LL,
+                                                    "Changed enable state"));
 
     // Read event and check if the enable state was really changed
-    const OpenTimeTracker::Server::Event event = database.readEvent(eventId);
+    const Event event = EventManagement::readEvent(eventId);
 
     QCOMPARE(event.isEnabled(), newEnableState);
 }
 
 void DatabaseTest::testCaseChangeEventEnableStateFail()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Change to the same event's enable state
     const qint64 eventId = 1LL;
     bool newEnableState = false;
 
-    QVERIFY(!database.changeEventEnableState(eventId, newEnableState, 1LL, "Same enable state"));
+    QVERIFY(!EventManagement::changeEventEnableState(eventId,
+                                                     newEnableState,
+                                                     1LL,
+                                                     "Same enable state"));
 }
 
 void DatabaseTest::testCaseReadEventChangeLogChangedEvent()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read event change log
     const qint64 eventId = 1LL;
-    const QList<OpenTimeTracker::Server::EventChangeLogItem> eventChangeLog =
-            database.readEventChangeLog(eventId);
+    const QList<EventChangeLogItem> eventChangeLog = EventManagement::readEventChangeLog(eventId);
 
     QCOMPARE(eventChangeLog.size(), 3);
 
@@ -735,23 +905,21 @@ void DatabaseTest::testCaseReadEventChangeLogChangedEvent()
 
     // Check changed type
     bool success = false;
-    OpenTimeTracker::Server::Event::Type fromValueType =
-            static_cast<OpenTimeTracker::Server::Event::Type>(
-                eventChangeLog[1].fromValue().toInt(&success));
+    Event::Type fromValueType = static_cast<Event::Type>(
+                                    eventChangeLog[1].fromValue().toInt(&success));
     QVERIFY(success);
 
     success = false;
-    OpenTimeTracker::Server::Event::Type toValueType =
-            static_cast<OpenTimeTracker::Server::Event::Type>(
-                eventChangeLog[1].toValue().toInt(&success));
+    Event::Type toValueType = static_cast<Event::Type>(
+                                  eventChangeLog[1].toValue().toInt(&success));
     QVERIFY(success);
 
     QCOMPARE(eventChangeLog[1].eventId(), eventId);
     QVERIFY(eventChangeLog[1].timestamp().secsTo(currentTime) >= 0);
     QVERIFY(eventChangeLog[1].timestamp().secsTo(currentTime) < 60);
     QCOMPARE(eventChangeLog[1].fieldName(), QString("type"));
-    QCOMPARE(fromValueType, OpenTimeTracker::Server::Event::Type_Started);
-    QCOMPARE(toValueType, OpenTimeTracker::Server::Event::Type_OnBreak);
+    QCOMPARE(fromValueType, Event::Type_Started);
+    QCOMPARE(toValueType, Event::Type_OnBreak);
 
     // Check changed enable state
     const bool fromValueEnableState = eventChangeLog[2].fromValue().toBool();
@@ -767,37 +935,43 @@ void DatabaseTest::testCaseReadEventChangeLogChangedEvent()
 
 // Setting unit tests ******************************************************************************
 
-void DatabaseTest::testCaseReadAllSettingsEmptyDatabase()
+void DatabaseTest::testCaseReadSettingsEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QMap<QString, QVariant> settings = database.readAllSettings();
+    // Read settings
+    QMap<QString, QVariant> settings = SettingsManagement::readSettings();
 
     QVERIFY(settings.isEmpty());
 }
 
-void DatabaseTest::testCaseAddSetting_data()
+void DatabaseTest::testCaseAddSettings()
 {
-    QTest::addColumn<QString>("name");
-    QTest::addColumn<QVariant>("value");
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QTest::newRow("1") << "setting1" << QVariant::fromValue(QString("stringValue"));
-    QTest::newRow("2") << "setting2" << QVariant::fromValue(123);
-}
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-void DatabaseTest::testCaseAddSetting()
-{
-    OpenTimeTracker::Server::Database database;
+    // Prepare new settings
+    QMap<QString, QVariant> settings;
+    settings["setting1"] = "stringValue";
+    settings["setting2"] = 123;
 
-    QVERIFY(database.connect(m_databaseFilePath));
-
-    // Add setting
-    QFETCH(QString, name);
-    QFETCH(QVariant, value);
-    // TODO: change to addSetting()
-    QVERIFY(database.writeSetting(name, value));
+    // Add settings
+    QVERIFY(SettingsManagement::addSettings(settings));
 }
 
 void DatabaseTest::testCaseAddSettingFail_data()
@@ -806,43 +980,61 @@ void DatabaseTest::testCaseAddSettingFail_data()
     QTest::addColumn<QVariant>("value");
 
     // Invalid name
-    QTest::newRow("1") << QString() << QVariant::fromValue(QString());
-    QTest::newRow("2") << "" << QVariant::fromValue(QString());
+    QTest::newRow("1") << QString() << QVariant(QString());
+    QTest::newRow("2") << "" << QVariant(QString());
 
     // Existing name
-    QTest::newRow("3") << "setting1" << QVariant::fromValue(QString("newStringValue"));
+    QTest::newRow("3") << "setting1" << QVariant("newStringValue");
 }
 
 void DatabaseTest::testCaseAddSettingFail()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
     // Add setting
     QFETCH(QString, name);
     QFETCH(QVariant, value);
-    // TODO: change to addSetting()
-    QVERIFY(!database.writeSetting(name, value));
+
+    // Prepare new (invalid) setting
+    QMap<QString, QVariant> settings;
+    settings[name] = value;
+
+    // Add (invalid) setting
+    QVERIFY(!SettingsManagement::addSettings(settings));
 }
 
-void DatabaseTest::testCaseReadAllSettingsNonEmptyDatabase()
+void DatabaseTest::testCaseReadSettingsNonEmptyDatabase()
 {
-    OpenTimeTracker::Server::Database database;
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
 
-    QVERIFY(database.connect(m_databaseFilePath));
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
 
-    QMap<QString, QVariant> settings = database.readAllSettings();
+    // Read settings
+    QMap<QString, QVariant> settings = SettingsManagement::readSettings();
 
     QCOMPARE(settings.size(), 2);
 
     // Setting 1
     QVERIFY(settings.contains("setting1"));
-    QCOMPARE(settings["setting1"], QVariant::fromValue(QString("stringValue")));
+    QCOMPARE(settings["setting1"], QVariant("stringValue"));
 
     // Setting 2
     QVERIFY(settings.contains("setting2"));
-    QCOMPARE(settings["setting2"], QVariant::fromValue(123));
+    QCOMPARE(settings["setting2"], QVariant(123));
 
 }
 

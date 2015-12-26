@@ -16,7 +16,10 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 HEADERS += \
-    ../../src/Database.hpp \
+    ../../src/Database/DatabaseManagement.hpp \
+    ../../src/Database/EventManagement.hpp \
+    ../../src/Database/SettingsManagement.hpp \
+    ../../src/Database/UserManagement.hpp \
     ../../src/Event.hpp \
     ../../src/EventChangeLogItem.hpp \
     ../../src/User.hpp \
@@ -25,7 +28,10 @@ HEADERS += \
 
 SOURCES += \
     tst_DatabaseTest.cpp \
-    ../../src/Database.cpp \
+    ../../src/Database/DatabaseManagement.cpp \
+    ../../src/Database/EventManagement.cpp \
+    ../../src/Database/SettingsManagement.cpp \
+    ../../src/Database/UserManagement.cpp \
     ../../src/Event.cpp \
     ../../src/EventChangeLogItem.cpp \
     ../../src/User.cpp \

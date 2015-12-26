@@ -33,6 +33,16 @@ class EventManagement
 {
 public:
     /*!
+     * \brief   Reads an specific event from the database
+     *
+     * \param   eventId     Event's ID
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    static Event readEvent(const qint64 &eventId);
+
+    /*!
      * \brief   Reads events from the database for a specific time range and user
      *
      * \param   startTimestamp  Read events from and including this timestamp
@@ -127,16 +137,6 @@ private:
      * \brief   Constructor is disabled
      */
     EventManagement();
-
-    /*!
-     * \brief   Reads an specific event from the database
-     *
-     * \param   eventId     Event's ID
-     *
-     * \retval  true    Success
-     * \retval  false   Error
-     */
-    static Event readEvent(const qint64 &eventId);
 };
 
 }

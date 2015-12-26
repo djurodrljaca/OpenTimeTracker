@@ -18,7 +18,7 @@
 
 using namespace OpenTimeTracker::Server;
 
-QList<User> Database::UserManagement::readAllUsers()
+QList<User> Database::UserManagement::readUsers()
 {
     QList<User> users;
 
@@ -59,7 +59,7 @@ QList<User> Database::UserManagement::readAllUsers()
     return users;
 }
 
-QList<UserGroup> Database::UserManagement::readAllUserGroups()
+QList<UserGroup> Database::UserManagement::readUserGroups()
 {
     QList<UserGroup> userGroups;
 
@@ -100,7 +100,7 @@ QList<UserGroup> Database::UserManagement::readAllUserGroups()
     return userGroups;
 }
 
-QList<UserMapping> Database::UserManagement::readAllUserMappings()
+QList<UserMapping> Database::UserManagement::readUserMappings()
 {
     QList<UserMapping> userMappings;
 

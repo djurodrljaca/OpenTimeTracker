@@ -38,21 +38,21 @@ public:
      *
      * \return  List of users
      */
-    static QList<User> readAllUsers();
+    static QList<User> readUsers();
 
     /*!
      * \brief   Reads all user groups from the database
      *
      * \return  List of user groups
      */
-    static QList<UserGroup> readAllUserGroups();
+    static QList<UserGroup> readUserGroups();
 
     /*!
      * \brief   Reads all user mappings from the database
      *
      * \return  List of user mappings
      */
-    static QList<UserMapping> readAllUserMappings();
+    static QList<UserMapping> readUserMappings();
 
     /*!
      * \brief   Adds a new user to the database

@@ -18,6 +18,35 @@
 
 using namespace OpenTimeTracker::Server;
 
+Event Database::EventManagement::readEvent(const qint64 &eventId)
+{
+    Event event;
+
+    if (DatabaseManagement::isConnected())
+    {
+        // Read command
+        const QString command = DatabaseManagement::readSqlCommandFromResource(
+                                    QStringLiteral("Events/ReadSingle.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command
+            QMap<QString, QVariant> values;
+            values[":id"] = eventId;
+
+            QList<QMap<QString, QVariant> > results;
+
+            if (DatabaseManagement::executeSqlCommand(command, values, &results))
+            {
+                // Get event from the query
+                event = Event::fromMap(results.at(0));
+            }
+        }
+    }
+
+    return event;
+}
+
 QList<Event> Database::EventManagement::readEvents(const QDateTime &startTimestamp,
                                                    const QDateTime &endTimestamp,
                                                    const qint64 &userId)
@@ -357,33 +386,4 @@ bool Database::EventManagement::changeEventEnableState(const qint64 &eventId,
     }
 
     return success;
-}
-
-Event Database::EventManagement::readEvent(const qint64 &eventId)
-{
-    Event event;
-
-    if (DatabaseManagement::isConnected())
-    {
-        // Read command
-        const QString command = DatabaseManagement::readSqlCommandFromResource(
-                                    QStringLiteral("Events/ReadSingle.sql"));
-
-        if (command.isEmpty() == false)
-        {
-            // Execute SQL command
-            QMap<QString, QVariant> values;
-            values[":id"] = eventId;
-
-            QList<QMap<QString, QVariant> > results;
-
-            if (DatabaseManagement::executeSqlCommand(command, values, &results))
-            {
-                // Get event from the query
-                event = Event::fromMap(results.at(0));
-            }
-        }
-    }
-
-    return event;
 }

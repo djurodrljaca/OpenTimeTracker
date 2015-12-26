@@ -18,7 +18,7 @@
 
 using namespace OpenTimeTracker::Server;
 
-QMap<QString, QVariant> Database::SettingsManagement::readAllSettings()
+QMap<QString, QVariant> Database::SettingsManagement::readSettings()
 {
     QMap<QString, QVariant> settings;
 
@@ -60,7 +60,7 @@ QMap<QString, QVariant> Database::SettingsManagement::readAllSettings()
     return settings;
 }
 
-bool Database::SettingsManagement::addAllSettings(const QMap<QString, QVariant> &settings)
+bool Database::SettingsManagement::addSettings(const QMap<QString, QVariant> &settings)
 {
     bool success = false;
 

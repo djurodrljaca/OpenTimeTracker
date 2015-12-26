@@ -37,7 +37,7 @@ public:
      *
      * \return  Settings
      */
-    static QMap<QString, QVariant> readAllSettings();
+    static QMap<QString, QVariant> readSettings();
 
     /*!
      * \brief   Add settings to the database
@@ -47,7 +47,7 @@ public:
      * \retval  true    Success
      * \retval  false   Error
      */
-    static bool addAllSettings(const QMap<QString, QVariant> &settings);
+    static bool addSettings(const QMap<QString, QVariant> &settings);
 
     /*!
      * \brief   Changes a setting in the database
