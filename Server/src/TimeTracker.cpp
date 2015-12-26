@@ -137,6 +137,11 @@ bool TimeTracker::initializeWorkday(const QDateTime &startOfWorkday, const QDate
     m_breakTime = 0;
     m_state = State_NotWorking;
     m_stateChangedTimestamp = QDateTime();
+
+
+
+    // TODO: fix
+    return false;
 }
 
 bool TimeTracker::startWorking(const QDateTime &timestamp)

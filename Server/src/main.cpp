@@ -15,32 +15,10 @@
  */
 #include <QCoreApplication>
 #include <QtDebug>
-#include "Database.hpp"
-
-using namespace OpenTimeTracker::Server;
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-
-    Database database;
-    bool success = database.connect("test.db");
-
-    if (success)
-    {
-        success = database.addUser("user1", "11");
-    }
-
-    if (success)
-    {
-        success = database.addUser("user2", "22");
-    }
-
-    QList<User> users;
-    if (success)
-    {
-        users = database.readAllUsers();
-    }
 
     return a.exec();
 }

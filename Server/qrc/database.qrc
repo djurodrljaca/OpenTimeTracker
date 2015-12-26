@@ -16,12 +16,16 @@
         <file>Database/EventChangeLog/ReadAll.sql</file>
         <file>Database/Events/ReadTimeRange.sql</file>
         <file>Database/Events/ReadSingle.sql</file>
-        <file>Database/Events/Update.sql</file>
         <file>Database/Settings/Add.sql</file>
         <file>Database/Settings/CreateTable.sql</file>
-        <file>Database/Settings/ReadSingle.sql</file>
-        <file>Database/Settings/Remove.sql</file>
         <file>Database/Settings/Update.sql</file>
         <file>Database/Settings/ReadAll.sql</file>
+        <file>Database/Events/UpdateEnabled.sql</file>
+        <file>Database/Events/UpdateTimestamp.sql</file>
+        <file>Database/Events/UpdateType.sql</file>
+        <file>Database/Users/UpdateName.sql</file>
+        <file>Database/Users/UpdatePassword.sql</file>
+        <file>Database/UserGroups/UpdateName.sql</file>
+        <file>Database/UserMapping/Remove.sql</file>
     </qresource>
 </RCC>

@@ -1,3 +1,3 @@
 UPDATE Events
-SET %fieldName% = :%fieldName%
+SET enabled = :enabled
 WHERE (id == :id);
