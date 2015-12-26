@@ -106,9 +106,11 @@ public:
     /*!
      * \brief   Executes SQL command
      *
-     * \param   commands    SQL command
-     * \param   values      List of values that can be bound to the command
-     * \param   results     Optional results of the executed command
+     * \param   commands        SQL command
+     * \param   values          List of values that can be bound to the command
+     * \param   results         Optional parameter for results of the executed command
+     * \param   rowsAffected    Optional parameter for number of affected rows of the executed
+     *                          command
      *
      * \retval  true    Success
      * \retval  false   Error
@@ -117,7 +119,8 @@ public:
      */
     static bool executeSqlCommand(const QString &command,
                                   const QMap<QString, QVariant> &values = QMap<QString, QVariant>(),
-                                  QList<QMap<QString, QVariant> > *results = NULL);
+                                  QList<QMap<QString, QVariant> > *results = NULL,
+                                  int *rowsAffected = NULL);
 
 private:
     /*!

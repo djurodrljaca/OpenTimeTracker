@@ -168,7 +168,16 @@ bool Database::UserManagement::addUser(const QString &name, const QString &passw
                 values[":password"] = password;
             }
 
-            success = DatabaseManagement::executeSqlCommand(command, values);
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
         }
     }
 
@@ -191,7 +200,16 @@ bool Database::UserManagement::addUserGroup(const QString &name)
             QMap<QString, QVariant> values;
             values[":name"] = name;
 
-            success = DatabaseManagement::executeSqlCommand(command, values);
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
         }
     }
 
@@ -215,7 +233,16 @@ bool Database::UserManagement::addUserMapping(const qint64 &userGroupId, const q
             values[":userGroupId"] = userGroupId;
             values[":userId"] = userId;
 
-            success = DatabaseManagement::executeSqlCommand(command, values);
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
         }
     }
 
@@ -240,7 +267,16 @@ bool Database::UserManagement::changeUserName(const qint64 &userId, const QStrin
             values[":id"] = userId;
             values[":name"] = newName;
 
-            success = DatabaseManagement::executeSqlCommand(command, values);
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
         }
     }
 
@@ -265,7 +301,16 @@ bool Database::UserManagement::changeUserPassword(const qint64 &userId, const QS
             values[":id"] = userId;
             values[":password"] = newPassword;
 
-            success = DatabaseManagement::executeSqlCommand(command, values);
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
         }
     }
 
@@ -296,7 +341,16 @@ bool Database::UserManagement::changeUserGroupName(const qint64 &userGroupId,
             values[":id"] = userGroupId;
             values[":name"] = newName;
 
-            success = DatabaseManagement::executeSqlCommand(command, values);
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
         }
     }
 
@@ -320,7 +374,16 @@ bool Database::UserManagement::removeUserMapping(const qint64 &userMappingId)
             QMap<QString, QVariant> values;
             values[":id"] = userMappingId;
 
-            success = DatabaseManagement::executeSqlCommand(command, values);
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
         }
     }
 

@@ -4,5 +4,9 @@ CREATE TABLE UserMapping (
     userGroupId INTEGER REFERENCES UserGroups (id)
                         NOT NULL,
     userId      INTEGER REFERENCES Users (id)
-                        NOT NULL
+                        NOT NULL,
+    UNIQUE (
+        userGroupId,
+        userId
+    )
 );

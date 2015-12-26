@@ -212,8 +212,9 @@ QStringList DatabaseManagement::readSqlCommandsFromResource(const QString &comma
 }
 
 bool DatabaseManagement::executeSqlCommand(const QString &command,
-                                 const QMap<QString, QVariant> &values,
-                                 QList<QMap<QString, QVariant> > *results)
+                                           const QMap<QString, QVariant> &values,
+                                           QList<QMap<QString, QVariant> > *results,
+                                           int *rowsAffected)
 {
     bool success = false;
 
@@ -249,32 +250,31 @@ bool DatabaseManagement::executeSqlCommand(const QString &command,
         {
             success = query.exec();
 
-            if (query.isSelect() && (results != NULL))
+            // Optionally get results
+            if (results != NULL)
             {
                 // Read the results
                 const QSqlRecord record = query.record();
                 results->clear();
 
-                if (record.isEmpty())
+                while (query.next())
                 {
-                    // At least one field was expected
-                    success = false;
-                }
-                else
-                {
-                    while (query.next())
+                    QMap<QString, QVariant> result;
+
+                    for (int i = 0; i < record.count(); i++)
                     {
-                        QMap<QString, QVariant> result;
-
-                        for (int i = 0; i < record.count(); i++)
-                        {
-                            // Add values to the the result for the selected column
-                            result[record.fieldName(i)] = query.value(i);
-                        }
-
-                        results->append(result);
+                        // Add values to the the result for the selected column
+                        result[record.fieldName(i)] = query.value(i);
                     }
+
+                    results->append(result);
                 }
+            }
+
+            // Optionally get affected rows
+            if (rowsAffected != NULL)
+            {
+                *rowsAffected = query.numRowsAffected();
             }
         }
     }

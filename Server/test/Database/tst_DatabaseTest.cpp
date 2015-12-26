@@ -35,10 +35,6 @@ private Q_SLOTS:
     void initTestCase();
     void cleanupTestCase();
 
-
-    // TODO: check below if any tests need to be added, removed or modified!
-
-
     // Connection unit tests
     void testCaseConnect();
     void testCaseDisconnect();
@@ -50,7 +46,11 @@ private Q_SLOTS:
     void testCaseAddUser();
     void testCaseAddUserFail_data();
     void testCaseAddUserFail();
-    // TODO: change user: name, password, enable state
+    void testCaseChangeUserName();
+    void testCaseChangeUserNameFail();
+    void testCaseChangeUserPassword();
+    void testCaseChangeUserPasswordFail();
+    void testCaseChangeUserEnableState();
     void testCaseReadUsersNonEmptyDatabase();
 
     // User group unit tests
@@ -59,7 +59,8 @@ private Q_SLOTS:
     void testCaseAddUserGroup();
     void testCaseAddUserGroupFail_data();
     void testCaseAddUserGroupFail();
-    // TODO: change user group name
+    void testCaseChangeUserGroupName();
+    void testCaseChangeUserGroupNameFail();
     void testCaseReadUserGroupsNonEmptyDatabase();
 
     // User mapping unit tests
@@ -68,7 +69,7 @@ private Q_SLOTS:
     void testCaseAddUserMapping();
     void testCaseAddUserMappingFail_data();
     void testCaseAddUserMappingFail();
-    // TODO: remove user mapping
+    void testCaseRemoveUserMapping();
     void testCaseReadUserMappingsNonEmptyDatabase();
 
     // Event unit tests
@@ -94,11 +95,15 @@ private Q_SLOTS:
     void testCaseAddSettings();
     void testCaseAddSettingFail_data();
     void testCaseAddSettingFail();
-    // TODO: change setting
+    void testCaseChangeSetting();
+    void testCaseChangeSettingFail();
     void testCaseReadSettingsNonEmptyDatabase();
 
 private:
     void removeDatabaseFile();
+    OpenTimeTracker::Server::User readUser(const qint64 &userId);
+    OpenTimeTracker::Server::UserGroup readUserGroup(const qint64 &userGroupId);
+    OpenTimeTracker::Server::UserMapping readUserMapping(const qint64 &userMappingId);
 
     const QString m_databaseFilePath;
 };
@@ -107,8 +112,6 @@ DatabaseTest::DatabaseTest()
     : m_databaseFilePath("test.db")
 {
 }
-
-// Initialization and cleanup **********************************************************************
 
 void DatabaseTest::removeDatabaseFile()
 {
@@ -124,6 +127,74 @@ void DatabaseTest::removeDatabaseFile()
         QVERIFY2(QFile::remove(m_databaseFilePath), "Database not removed");
     }
 }
+
+OpenTimeTracker::Server::User DatabaseTest::readUser(const qint64 &userId)
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    QList<User> users = UserManagement::readUsers();
+
+    // Find user
+    User user;
+
+    for (int i = 0; i < users.size(); i++)
+    {
+        if (users[i].id() == userId)
+        {
+            user = users[i];
+            break;
+        }
+    }
+
+    return user;
+}
+
+OpenTimeTracker::Server::UserGroup DatabaseTest::readUserGroup(const qint64 &userGroupId)
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    QList<UserGroup> userGroups = UserManagement::readUserGroups();
+
+    // Find user group
+    UserGroup userGroup;
+
+    for (int i = 0; i < userGroups.size(); i++)
+    {
+        if (userGroups[i].id() == userGroupId)
+        {
+            userGroup = userGroups[i];
+            break;
+        }
+    }
+
+    return userGroup;
+}
+
+OpenTimeTracker::Server::UserMapping DatabaseTest::readUserMapping(const qint64 &userMappingId)
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    QList<UserMapping> userMappings = UserManagement::readUserMappings();
+
+    // Find user mapping
+    UserMapping userMapping;
+
+    for (int i = 0; i < userMappings.size(); i++)
+    {
+        if (userMappings[i].id() == userMappingId)
+        {
+            userMapping = userMappings[i];
+            break;
+        }
+    }
+
+    return userMapping;
+}
+
+// Initialization and cleanup **********************************************************************
 
 void DatabaseTest::initTestCase()
 {
@@ -272,6 +343,139 @@ void DatabaseTest::testCaseAddUserFail()
     QVERIFY(!UserManagement::addUser(name, password));
 }
 
+void DatabaseTest::testCaseChangeUserName()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read user
+    qint64 userId = 2LL;
+    User userOld = readUser(userId);
+    QVERIFY(userOld.isValid());
+
+    // Make sure the name will be changed
+    const QString newName("user2renamed");
+    QVERIFY(userOld.name() != newName);
+
+    // Change user name
+    QVERIFY(UserManagement::changeUserName(userId, newName));
+
+    // Re-read user
+    User userNew = readUser(userId);
+    QVERIFY(userNew.isValid());
+
+    // Check if user name was changed
+    QCOMPARE(userNew.name(), newName);
+}
+
+void DatabaseTest::testCaseChangeUserNameFail()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Invalid name
+    qint64 userId = 2LL;
+    QVERIFY(!UserManagement::changeUserName(userId, QString()));
+    QVERIFY(!UserManagement::changeUserName(userId, QString("")));
+
+    // Existing name
+    QVERIFY(!UserManagement::changeUserName(userId, "user1"));
+}
+
+void DatabaseTest::testCaseChangeUserPassword()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read user
+    qint64 userId = 2LL;
+    User userOld = readUser(userId);
+    QVERIFY(userOld.isValid());
+
+    // Make sure the password will be changed
+    const QString newPassword("password");
+    QVERIFY(userOld.password() != newPassword);
+
+    // Change user password
+    QVERIFY(UserManagement::changeUserPassword(userId, newPassword));
+
+    // Re-read user
+    User userNew = readUser(userId);
+    QVERIFY(userNew.isValid());
+
+    // Check if user password was changed
+    QCOMPARE(userNew.password(), newPassword);
+}
+
+void DatabaseTest::testCaseChangeUserPasswordFail()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Existing password
+    qint64 userId = 2LL;
+    QVERIFY(!UserManagement::changeUserPassword(userId, "111"));
+}
+
+void DatabaseTest::testCaseChangeUserEnableState()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read user
+    qint64 userId = 2LL;
+    User userOld = readUser(userId);
+    QVERIFY(userOld.isValid());
+
+    // Make sure the the user is enabled
+    QVERIFY(!userOld.password().isEmpty());
+
+    // Disable user
+    QVERIFY(UserManagement::disableUser(userId));
+
+    // Re-read user
+    User userNew = readUser(userId);
+    QVERIFY(userNew.isValid());
+
+    // Check if user was disabled
+    QVERIFY(userNew.password().isEmpty());
+}
+
 void DatabaseTest::testCaseReadUsersNonEmptyDatabase()
 {
     using namespace OpenTimeTracker::Server;
@@ -294,7 +498,7 @@ void DatabaseTest::testCaseReadUsersNonEmptyDatabase()
     QCOMPARE(users[0].password(), QString("111"));
 
     // User 2
-    QCOMPARE(users[1].name(), QString("user2"));
+    QCOMPARE(users[1].name(), QString("user2renamed"));
     QVERIFY(users[1].password().isNull());
 }
 
@@ -370,6 +574,59 @@ void DatabaseTest::testCaseAddUserGroupFail()
     QVERIFY(!UserManagement::addUserGroup(name));
 }
 
+void DatabaseTest::testCaseChangeUserGroupName()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read user group
+    qint64 userGroupId = 2LL;
+    UserGroup userGroupOld = readUserGroup(userGroupId);
+    QVERIFY(userGroupOld.isValid());
+
+    // Make sure the name will be changed
+    const QString newName("userGroup2renamed");
+    QVERIFY(userGroupOld.name() != newName);
+
+    // Change user group name
+    QVERIFY(UserManagement::changeUserGroupName(userGroupId, newName));
+
+    // Re-read user group
+    UserGroup userGroupNew = readUserGroup(userGroupId);
+    QVERIFY(userGroupNew.isValid());
+
+    // Check if user group name was changed
+    QCOMPARE(userGroupNew.name(), newName);
+}
+
+void DatabaseTest::testCaseChangeUserGroupNameFail()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Invalid name
+    qint64 userGroupId = 2LL;
+    QVERIFY(!UserManagement::changeUserGroupName(userGroupId, QString()));
+    QVERIFY(!UserManagement::changeUserGroupName(userGroupId, QString("")));
+
+    // Existing name
+    QVERIFY(!UserManagement::changeUserGroupName(userGroupId, "userGroup1"));
+}
+
 void DatabaseTest::testCaseReadUserGroupsNonEmptyDatabase()
 {
     using namespace OpenTimeTracker::Server;
@@ -391,7 +648,7 @@ void DatabaseTest::testCaseReadUserGroupsNonEmptyDatabase()
     QCOMPARE(userGroups[0].name(), QString("userGroup1"));
 
     // User group 2
-    QCOMPARE(userGroups[1].name(), QString("userGroup2"));
+    QCOMPARE(userGroups[1].name(), QString("userGroup2renamed"));
 }
 
 // User mapping unit tests *************************************************************************
@@ -423,8 +680,9 @@ void DatabaseTest::testCaseAddUserMapping_data()
     QTest::newRow("1") << 1LL << 1LL;
     QTest::newRow("2") << 2LL << 1LL;
 
-    // Map user 2 to user group 2
+    // Map user 2 to user groups 2 and 1
     QTest::newRow("3") << 2LL << 2LL;
+    QTest::newRow("4") << 1LL << 2LL;
 }
 
 void DatabaseTest::testCaseAddUserMapping()
@@ -456,6 +714,9 @@ void DatabaseTest::testCaseAddUserMappingFail_data()
     // Invalid user ID
     QTest::newRow("3") << 1LL << 0LL;
     QTest::newRow("4") << 1LL << 3LL;
+
+    // Existing
+    QTest::newRow("5") << 1LL << 1LL;
 }
 
 void DatabaseTest::testCaseAddUserMappingFail()
@@ -473,6 +734,31 @@ void DatabaseTest::testCaseAddUserMappingFail()
     QFETCH(qint64, userGroupId);
     QFETCH(qint64, userId);
     QVERIFY(!UserManagement::addUserMapping(userGroupId, userId));
+}
+
+void DatabaseTest::testCaseRemoveUserMapping()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Make sure the mapping exists
+    qint64 userMappingId = 4LL;
+    UserMapping userMappingOld = readUserMapping(userMappingId);
+    QVERIFY(userMappingOld.isValid());
+
+    // Remove user mapping
+    QVERIFY(UserManagement::removeUserMapping(userMappingId));
+
+    // Check if user mapping was removed
+    UserMapping userMappingNew = readUserMapping(userMappingId);
+    QVERIFY(!userMappingNew.isValid());
 }
 
 void DatabaseTest::testCaseReadUserMappingsNonEmptyDatabase()
@@ -1011,6 +1297,52 @@ void DatabaseTest::testCaseAddSettingFail()
     QVERIFY(!SettingsManagement::addSettings(settings));
 }
 
+void DatabaseTest::testCaseChangeSetting()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Check if setting exists
+    const QString name("setting2");
+    QMap<QString, QVariant> settingsOld = SettingsManagement::readSettings();
+    QVERIFY(settingsOld.contains(name));
+
+    // Make sure the setting will be changed
+    const QVariant newValue(999);
+    QVERIFY(settingsOld[name] != newValue);
+
+    // Change setting
+    QVERIFY(SettingsManagement::changeSetting(name, newValue));
+
+    // Make sure the setting was changed
+    QMap<QString, QVariant> settingsNew = SettingsManagement::readSettings();
+    QVERIFY(settingsNew.contains(name));
+    QCOMPARE(settingsNew[name], newValue);
+}
+
+void DatabaseTest::testCaseChangeSettingFail()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Nonexistent setting
+    QVERIFY(!SettingsManagement::changeSetting(QString("settingX"), QString()));
+}
+
 void DatabaseTest::testCaseReadSettingsNonEmptyDatabase()
 {
     using namespace OpenTimeTracker::Server;
@@ -1034,7 +1366,7 @@ void DatabaseTest::testCaseReadSettingsNonEmptyDatabase()
 
     // Setting 2
     QVERIFY(settings.contains("setting2"));
-    QCOMPARE(settings["setting2"], QVariant(123));
+    QCOMPARE(settings["setting2"], QVariant(999));
 
 }
 

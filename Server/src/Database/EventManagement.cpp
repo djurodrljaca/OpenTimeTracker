@@ -162,7 +162,16 @@ bool Database::EventManagement::addEvent(const QDateTime &timestamp,
             values[":enabled"] = 1;
 
             // Execute the command
-            success = DatabaseManagement::executeSqlCommand(command, values);
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
         }
     }
 
@@ -221,7 +230,19 @@ bool Database::EventManagement::changeEventTimestamp(const qint64 &eventId,
                     values[":userId"] = userId;
                     values[":comment"] = comment;
 
-                    success = DatabaseManagement::executeSqlCommand(command, values);
+                    int rowsAffected = -1;
+                    success = DatabaseManagement::executeSqlCommand(command,
+                                                                    values,
+                                                                    NULL,
+                                                                    &rowsAffected);
+
+                    if (success)
+                    {
+                        if (rowsAffected != 1)
+                        {
+                            success = false;
+                        }
+                    }
                 }
             }
 
@@ -294,7 +315,19 @@ bool Database::EventManagement::changeEventType(const qint64 &eventId,
                     values[":userId"] = userId;
                     values[":comment"] = comment;
 
-                    success = DatabaseManagement::executeSqlCommand(command, values);
+                    int rowsAffected = -1;
+                    success = DatabaseManagement::executeSqlCommand(command,
+                                                                    values,
+                                                                    NULL,
+                                                                    &rowsAffected);
+
+                    if (success)
+                    {
+                        if (rowsAffected != 1)
+                        {
+                            success = false;
+                        }
+                    }
                 }
             }
 
@@ -367,7 +400,19 @@ bool Database::EventManagement::changeEventEnableState(const qint64 &eventId,
                     values[":userId"] = userId;
                     values[":comment"] = comment;
 
-                    success = DatabaseManagement::executeSqlCommand(command, values);
+                    int rowsAffected = -1;
+                    success = DatabaseManagement::executeSqlCommand(command,
+                                                                    values,
+                                                                    NULL,
+                                                                    &rowsAffected);
+
+                    if (success)
+                    {
+                        if (rowsAffected != 1)
+                        {
+                            success = false;
+                        }
+                    }
                 }
             }
 
