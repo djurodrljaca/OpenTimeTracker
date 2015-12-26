@@ -82,7 +82,7 @@ public:
      * Setting is inserted if it doesn't exist, but if it exists it is updated if necessary
      */
     bool writeSetting(const QString &name, const QVariant &value);
-    // TODO: split into "add" and "change"?
+    // TODO: split into "add" and "change"? Also add all settings at once!
 
     /*!
      * \brief   Reads all settings from the system
@@ -368,6 +368,8 @@ private:
     static const qint32 m_version;
 
     // TODO: split into multiple classes
+    // TODO: use transactions everywhere!
+    // TODO: change the connection string to something unique! ("OpenTimeTracker" ? )
 };
 
 }

@@ -10,22 +10,22 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += src/main.cpp \
-    src/Database.cpp \
     src/Event.cpp \
     src/EventChangeLogItem.cpp \
     src/UserGroup.cpp \
     src/User.cpp \
     src/UserMapping.cpp \
-    src/TimeTracker.cpp
+    src/TimeTracker.cpp \
+    src/Database/Database.cpp
 
 HEADERS += \
-    src/Database.hpp \
     src/Event.hpp \
     src/EventChangeLogItem.hpp \
     src/UserGroup.hpp \
     src/User.hpp \
     src/UserMapping.hpp \
-    src/TimeTracker.hpp
+    src/TimeTracker.hpp \
+    src/Database/Database.hpp
 
 RESOURCES += \
     qrc/database.qrc
