@@ -225,6 +225,10 @@ private:
      * \brief   Holds the database's connection name
      */
     static const QString m_connectionName;
+
+    // TODO: Management of workdays is needed. A setting is needed for when a workday should start
+    //       and when it should end. Also save the start and end of a workday in the database every
+    //       time a new workday is started! Should this be under "schedule management"?
 };
 
 }

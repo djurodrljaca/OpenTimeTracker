@@ -81,18 +81,27 @@ public:
     void setUserId(const qint64 &newUserId);
 
     /*!
-     * \brief   Gets working time
+     * \brief   Calculates working time
      *
      * \return  Working time (in seconds)
      */
-    qint32 workingTime() const;
+    qint32 calculateWorkingTime() const;
 
     /*!
-     * \brief   Gets break time
+     * \brief   Calculates break time
      *
      * \return  Break time (in seconds)
      */
-    qint32 breakTime() const;
+    qint32 calculateBreakTime() const;
+
+    /*!
+     * \brief   Calculates total working time
+     *
+     * \return  Total working time (in seconds)
+     *
+     * Total working time is a sum of the working time and (limited) break time.
+     */
+    qint32 calculateTotalWorkingTime() const;
 
     /*!
      * \brief   Gets current state of the user being tracked
@@ -102,10 +111,9 @@ public:
     State state() const;
 
     /*!
-     * \brief   Initializes the workday
+     * \brief   Starts the workday
      *
-     * \param   startOfWorkday  Start of the current workday
-     * \param   endOfWorkday    End of the current workday
+     * \param   allowedBreakTimeCoeficient  Coeficient for calculation of allowed break time
      *
      * \retval  true    Success
      * \retval  false   Error
@@ -120,11 +128,11 @@ public:
      *   user.
      *
      * \note    Working and break times, state and timestamp of the last state change are all
-     *          cleared.
+     *          (re)initialized when this method is called.
      *
      * \todo    Also set the schedule? And events for this workday?
      */
-    bool initializeWorkday(const QDateTime &startOfWorkday, const QDateTime &endOfWorkday);
+    bool startWorkday(const double &allowedBreakTimeCoeficient);
 
     /*!
      * \brief   Starts tracking users working time
@@ -181,14 +189,13 @@ private:
     qint64 m_userId;
 
     /*!
-     * \brief   Holds the start of the workday
+     * \brief   Holds the allowed break time coeficient
+     *
+     * This coeficient is used to calculate the allowed break time from the working time. The
+     * calculated value is then used to limit the amount of break time that can be added to the
+     * total working time.
      */
-    QDateTime m_startOfWorkday;
-
-    /*!
-     * \brief   Holds the end of the workday
-     */
-    QDateTime m_endOfWorkday;
+    double m_allowedBreakTimeCoeficient;
 
     /*!
      * \brief   Holds the current working time (in seconds)
@@ -210,7 +217,6 @@ private:
      */
     QDateTime m_stateChangedTimestamp;
 
-    // TODO: add totalWorkingTime() that includes the (allowed) break
     // TODO: add work schedule?
     // TODO: update and extend the unit tests!
 };
