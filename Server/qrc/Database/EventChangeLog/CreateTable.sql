@@ -10,14 +10,13 @@ CREATE TABLE EventChangeLog (
                                (fieldName == 'type') OR
                                (fieldName == 'enabled') ),
     fromValue          NOT NULL,
-    toValue            NOT NULL
-                       CHECK (toValue <> fromValue),
+    toValue            NOT NULL,
     userId    INTEGER  REFERENCES Users (id)
                        NOT NULL,
     comment   TEXT     NOT NULL
-                       CHECK (comment <> '')
+                       CHECK (comment <> ''),
+    CHECK (fromValue <> toValue)
 );
-
 
 CREATE INDEX index_EventChangeLog_id ON EventChangeLog (
     id

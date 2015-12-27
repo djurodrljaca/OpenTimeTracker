@@ -19,7 +19,7 @@ using namespace OpenTimeTracker::Server;
 
 TimeTracker::TimeTracker()
     : m_userId(0LL),
-      m_allowedBreakTimeCoeficient(0.0),
+      m_allowedBreakTimeCoefficient(0.0),
       m_workingTime(0),
       m_breakTime(0),
       m_state(State_NotWorking),
@@ -29,7 +29,7 @@ TimeTracker::TimeTracker()
 
 TimeTracker::TimeTracker(const TimeTracker &other)
     : m_userId(other.m_userId),
-      m_allowedBreakTimeCoeficient(other.m_allowedBreakTimeCoeficient),
+      m_allowedBreakTimeCoefficient(other.m_allowedBreakTimeCoefficient),
       m_workingTime(other.m_workingTime),
       m_breakTime(other.m_breakTime),
       m_state(other.m_state),
@@ -42,7 +42,7 @@ TimeTracker &TimeTracker::operator =(const TimeTracker &other)
     if (this != &other)
     {
         m_userId = other.m_userId;
-        m_allowedBreakTimeCoeficient = other.m_allowedBreakTimeCoeficient;
+        m_allowedBreakTimeCoefficient = other.m_allowedBreakTimeCoefficient;
         m_workingTime = other.m_workingTime;
         m_breakTime = other.m_breakTime;
         m_state = other.m_state;
@@ -57,7 +57,7 @@ bool TimeTracker::isValid() const
     bool valid = true;
 
     if ((m_userId < 1LL) ||
-        (m_allowedBreakTimeCoeficient < 0.0) ||
+        (m_allowedBreakTimeCoefficient < 0.0) ||
         (m_workingTime < 0) ||
         (m_breakTime < 0))
     {
@@ -145,7 +145,7 @@ qint32 TimeTracker::calculateTotalWorkingTime() const
         const qint32 breakTime = calculateBreakTime();
 
         // Calculate the break time limit
-        const double breakTimeLimit = workingTime * m_allowedBreakTimeCoeficient;
+        const double breakTimeLimit = workingTime * m_allowedBreakTimeCoefficient;
 
         // Calculate total time
         totalWorkingTime = workingTime;
@@ -174,7 +174,7 @@ bool TimeTracker::startWorkday(const double &allowedBreakTimeCoeficient)
 
     if (allowedBreakTimeCoeficient >= 0.0)
     {
-        m_allowedBreakTimeCoeficient = allowedBreakTimeCoeficient;
+        m_allowedBreakTimeCoefficient = allowedBreakTimeCoeficient;
         m_workingTime = 0;
         m_breakTime = 0;
         m_state = State_NotWorking;

@@ -27,5 +27,8 @@
         <file>Database/Users/UpdatePassword.sql</file>
         <file>Database/UserGroups/UpdateName.sql</file>
         <file>Database/UserMapping/Remove.sql</file>
+        <file>Database/WorkingDays/Add.sql</file>
+        <file>Database/WorkingDays/CreateTable.sql</file>
+        <file>Database/WorkingDays/Read.sql</file>
     </qresource>
 </RCC>

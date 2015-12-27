@@ -19,7 +19,8 @@ SOURCES += src/main.cpp \
     src/Database/EventManagement.cpp \
     src/Database/UserManagement.cpp \
     src/Database/DatabaseManagement.cpp \
-    src/Database/SettingsManagement.cpp
+    src/Database/SettingsManagement.cpp \
+    src/Database/ScheduleManagement.cpp
 
 HEADERS += \
     src/Event.hpp \
@@ -31,7 +32,8 @@ HEADERS += \
     src/Database/EventManagement.hpp \
     src/Database/UserManagement.hpp \
     src/Database/DatabaseManagement.hpp \
-    src/Database/SettingsManagement.hpp
+    src/Database/SettingsManagement.hpp \
+    src/Database/ScheduleManagement.hpp
 
 RESOURCES += \
     qrc/database.qrc

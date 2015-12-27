@@ -113,7 +113,7 @@ public:
     /*!
      * \brief   Starts the workday
      *
-     * \param   allowedBreakTimeCoeficient  Coeficient for calculation of allowed break time
+     * \param   allowedBreakTimeCoefficient     Coefficient for calculation of allowed break time
      *
      * \retval  true    Success
      * \retval  false   Error
@@ -124,7 +124,7 @@ public:
      * - If each workday starts at midnight, then this should be called at midnight.
      *
      * - If server was started in the middle of the workday then this should be called and the
-     *   events for this workday should be put throgh this object to get the current state of the
+     *   events for this workday should be put through this object to get the current state of the
      *   user.
      *
      * \note    Working and break times, state and timestamp of the last state change are all
@@ -189,13 +189,13 @@ private:
     qint64 m_userId;
 
     /*!
-     * \brief   Holds the allowed break time coeficient
+     * \brief   Holds the allowed break time coefficient
      *
-     * This coeficient is used to calculate the allowed break time from the working time. The
+     * This coefficient is used to calculate the allowed break time from the working time. The
      * calculated value is then used to limit the amount of break time that can be added to the
      * total working time.
      */
-    double m_allowedBreakTimeCoeficient;
+    double m_allowedBreakTimeCoefficient;
 
     /*!
      * \brief   Holds the current working time (in seconds)

@@ -311,6 +311,12 @@ bool DatabaseManagement::initialize()
         // Create table: Settings
         success = createTable(QStringLiteral("Settings"));
 
+        // Create table: WorkingDays
+        if (success)
+        {
+            success = createTable(QStringLiteral("WorkingDays"));
+        }
+
         // Create table: Users
         if (success)
         {
