@@ -1,5 +1,7 @@
-CREATE TABLE WorkingDays (
+CREATE TABLE Schedules (
     id             INTEGER  PRIMARY KEY AUTOINCREMENT
+                            NOT NULL,
+    userId         INTEGER  REFERENCES Users (id)
                             NOT NULL,
     startTimestamp DATETIME CHECK (startTimestamp <> '')
                             NOT NULL,
@@ -8,7 +10,8 @@ CREATE TABLE WorkingDays (
     CHECK (startTimestamp < endTimestamp)
 );
 
-CREATE INDEX index_WorkingDays_search ON WorkingDays (
+CREATE INDEX index_Schedules_search ON Schedules (
+    userId,
     startTimestamp,
     endTimestamp
 );

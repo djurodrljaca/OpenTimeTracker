@@ -30,5 +30,10 @@
         <file>Database/WorkingDays/Add.sql</file>
         <file>Database/WorkingDays/CreateTable.sql</file>
         <file>Database/WorkingDays/Read.sql</file>
+        <file>Database/Schedules/Add.sql</file>
+        <file>Database/Schedules/CreateTable.sql</file>
+        <file>Database/Schedules/Remove.sql</file>
+        <file>Database/Schedules/ReadAllUsers.sql</file>
+        <file>Database/Schedules/ReadSingleUser.sql</file>
     </qresource>
 </RCC>

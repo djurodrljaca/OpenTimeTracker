@@ -4,7 +4,3 @@ CREATE TABLE Settings (
                CHECK (name <> ''),
     value
 );
-
-CREATE INDEX index_Settings_name ON Settings (
-    name
-);

@@ -17,6 +17,9 @@
 #define OPENTIMETRACKER_SERVER_TIMETRACKER_HPP
 
 #include <QDateTime>
+#include <QList>
+#include "Schedule.hpp"
+#include "BreakTimeCalculator.hpp"
 
 namespace OpenTimeTracker
 {
@@ -113,7 +116,9 @@ public:
     /*!
      * \brief   Starts the workday
      *
-     * \param   allowedBreakTimeCoefficient     Coefficient for calculation of allowed break time
+     * \param   breakTimeCalculator Break time calculator
+     * \param   schedules           List of schedules that define when the working time shall be
+     *                              tracked
      *
      * \retval  true    Success
      * \retval  false   Error
@@ -130,9 +135,10 @@ public:
      * \note    Working and break times, state and timestamp of the last state change are all
      *          (re)initialized when this method is called.
      *
-     * \todo    Also set the schedule? And events for this workday?
+     * \note    Only the working time (and allowed break time) within the schedules is tracked.
      */
-    bool startWorkday(const double &allowedBreakTimeCoeficient);
+    bool startWorkday(const BreakTimeCalculator &breakTimeCalculator,
+                      const QList<Schedule> &schedules);
 
     /*!
      * \brief   Starts tracking users working time
@@ -184,18 +190,30 @@ public:
 
 private:
     /*!
+     * \brief   Calculates scheduled time for the specified date and time range
+     *
+     * \param   startTimestamp  Start timestamp
+     * \param   endTimestamp    End timestamp
+     *
+     * \return  Scheduled time for the specified date and time range (in seconds)
+     */
+    qint32 calculateScheduledTime(const QDateTime &startTimestamp,
+                                  const QDateTime &endTimestamp) const;
+
+    /*!
      * \brief   Holds the ID of the user to track
      */
     qint64 m_userId;
 
     /*!
-     * \brief   Holds the allowed break time coefficient
-     *
-     * This coefficient is used to calculate the allowed break time from the working time. The
-     * calculated value is then used to limit the amount of break time that can be added to the
-     * total working time.
+     * \brief   Holds the break time calculator
      */
-    double m_allowedBreakTimeCoefficient;
+    BreakTimeCalculator m_breakTimeCalculator;
+
+    /*!
+     * \brief   Holds the schedules that define when the working time shall be tracked
+     */
+    QList<Schedule> m_schedules;
 
     /*!
      * \brief   Holds the current working time (in seconds)
@@ -217,7 +235,9 @@ private:
      */
     QDateTime m_stateChangedTimestamp;
 
-    // TODO: add work schedule?
+    // TODO: re-factor time tracking from a sum of times to a list of date & time ranges? At the
+    //       same time add a parameter for calculation of times at specific timestamp?
+
     // TODO: update and extend the unit tests!
 };
 

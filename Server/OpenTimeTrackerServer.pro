@@ -20,7 +20,9 @@ SOURCES += src/main.cpp \
     src/Database/UserManagement.cpp \
     src/Database/DatabaseManagement.cpp \
     src/Database/SettingsManagement.cpp \
-    src/Database/ScheduleManagement.cpp
+    src/Database/ScheduleManagement.cpp \
+    src/Schedule.cpp \
+    src/BreakTimeCalculator.cpp
 
 HEADERS += \
     src/Event.hpp \
@@ -33,7 +35,9 @@ HEADERS += \
     src/Database/UserManagement.hpp \
     src/Database/DatabaseManagement.hpp \
     src/Database/SettingsManagement.hpp \
-    src/Database/ScheduleManagement.hpp
+    src/Database/ScheduleManagement.hpp \
+    src/Schedule.hpp \
+    src/BreakTimeCalculator.hpp
 
 RESOURCES += \
     qrc/database.qrc

@@ -17,10 +17,7 @@ CREATE INDEX index_Events_id ON Events (
     id
 );
 
-CREATE INDEX index_Events_timestamp ON Events (
-    timestamp
-);
-
-CREATE INDEX index_Events_userId ON Events (
+CREATE INDEX index_Events_search ON Events (
+    timestamp,
     userId
 );

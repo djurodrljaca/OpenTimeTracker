@@ -335,6 +335,12 @@ bool DatabaseManagement::initialize()
             success = createTable(QStringLiteral("UserMapping"));
         }
 
+        // Create table: Schedules
+        if (success)
+        {
+            success = createTable(QStringLiteral("Schedules"));
+        }
+
         // Create table: Events
         if (success)
         {

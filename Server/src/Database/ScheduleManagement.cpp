@@ -38,7 +38,7 @@ QPair<QDateTime, QDateTime> Database::ScheduleManagement::readWorkingDay(const Q
 
             if (DatabaseManagement::executeSqlCommand(command, values, &results))
             {
-                // Get event from the query
+                // Get working day from the query
                 if (results.size() == 1)
                 {
                     bool success = false;
@@ -86,6 +86,100 @@ QPair<QDateTime, QDateTime> Database::ScheduleManagement::readWorkingDay(const Q
     return workingDay;
 }
 
+QList<Schedule> Database::ScheduleManagement::readSchedules(const qint64 &userId,
+                                                            const QDateTime &startTimestamp,
+                                                            const QDateTime &endTimestamp)
+{
+    QList<Schedule> schedules;
+
+    if (DatabaseManagement::isConnected())
+    {
+        // Read command
+        const QString command = DatabaseManagement::readSqlCommandFromResource(
+                                    QStringLiteral("Schedules/ReadSingleUser.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command (timestamps in the database are stored in UTC)
+            QMap<QString, QVariant> values;
+            values[":userId"] = userId;
+            values[":startTimestamp"] = startTimestamp.toUTC().toString(Qt::ISODate);
+            values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
+
+            QList<QMap<QString, QVariant> > results;
+
+            if (DatabaseManagement::executeSqlCommand(command, values, &results))
+            {
+                // Get all schedules from the query
+                for (int i = 0; i < results.size(); i++)
+                {
+                    Schedule schedule = Schedule::fromMap(results.at(i));
+
+                    if (schedule.isValid())
+                    {
+                        // Add schedule to list
+                        schedules.append(schedule);
+                    }
+                    else
+                    {
+                        // On error stop reading the results and clear them
+                        schedules.clear();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return schedules;
+}
+
+QList<Schedule> Database::ScheduleManagement::readSchedules(const QDateTime &startTimestamp,
+                                                            const QDateTime &endTimestamp)
+{
+    QList<Schedule> schedules;
+
+    if (DatabaseManagement::isConnected())
+    {
+        // Read command
+        const QString command = DatabaseManagement::readSqlCommandFromResource(
+                                    QStringLiteral("Schedules/ReadAllUsers.sql"));
+
+        if (command.isEmpty() == false)
+        {
+            // Execute SQL command (timestamps in the database are stored in UTC)
+            QMap<QString, QVariant> values;
+            values[":startTimestamp"] = startTimestamp.toUTC().toString(Qt::ISODate);
+            values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
+
+            QList<QMap<QString, QVariant> > results;
+
+            if (DatabaseManagement::executeSqlCommand(command, values, &results))
+            {
+                // Get all schedules from the query
+                for (int i = 0; i < results.size(); i++)
+                {
+                    Schedule schedule = Schedule::fromMap(results.at(i));
+
+                    if (schedule.isValid())
+                    {
+                        // Add schedule to list
+                        schedules.append(schedule);
+                    }
+                    else
+                    {
+                        // On error stop reading the results and clear them
+                        schedules.clear();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return schedules;
+}
+
 bool Database::ScheduleManagement::addWorkingDay(const QDateTime &startTimestamp,
                                                  const QDateTime &endTimestamp)
 {
@@ -103,6 +197,75 @@ bool Database::ScheduleManagement::addWorkingDay(const QDateTime &startTimestamp
             QMap<QString, QVariant> values;
             values[":startTimestamp"] = startTimestamp.toUTC().toString(Qt::ISODate);
             values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
+
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
+        }
+    }
+
+    return success;
+}
+
+bool Database::ScheduleManagement::addSchedule(const qint64 &userId,
+                                               const QDateTime &startTimestamp,
+                                               const QDateTime &endTimestamp)
+{
+    bool success = false;
+
+    if (DatabaseManagement::isConnected())
+    {
+        // Read command
+        const QString command = DatabaseManagement::readSqlCommandFromResource(
+                                    QStringLiteral("Schedules/Add.sql"));
+
+        // Execute command
+        if ((!command.isEmpty()) && startTimestamp.isValid() && endTimestamp.isValid())
+        {
+            QMap<QString, QVariant> values;
+            values[":userId"] = userId;
+            values[":startTimestamp"] = startTimestamp.toUTC().toString(Qt::ISODate);
+            values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
+
+            int rowsAffected = -1;
+            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+
+            if (success)
+            {
+                if (rowsAffected != 1)
+                {
+                    success = false;
+                }
+            }
+        }
+    }
+
+    return success;
+}
+
+bool Database::ScheduleManagement::removeSchedule(const qint64 &scheduleId)
+{
+    bool success = false;
+
+    if (DatabaseManagement::isConnected())
+    {
+        // Read command
+        const QString command = DatabaseManagement::readSqlCommandFromResource(
+                                    QStringLiteral("Schedules/Remove.sql"));
+
+        // Execute command
+        if (command.isEmpty() == false)
+        {
+            // Execute the command
+            QMap<QString, QVariant> values;
+            values[":id"] = scheduleId;
 
             int rowsAffected = -1;
             success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);

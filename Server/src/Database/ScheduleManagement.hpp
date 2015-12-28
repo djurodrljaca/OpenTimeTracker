@@ -18,6 +18,7 @@
 
 #include <QDateTime>
 #include <QPair>
+#include "../Schedule.hpp"
 
 namespace OpenTimeTracker
 {
@@ -47,6 +48,30 @@ public:
     static QPair<QDateTime, QDateTime> readWorkingDay(const QDateTime &timestamp);
 
     /*!
+     * \brief   Reads schedules from the database for a specific time range and user
+     *
+     * \param   userId          Read events for the selected user
+     * \param   startTimestamp  Read schedules from and including this timestamp
+     * \param   endTimestamp    Read schedules up to and including this timestamp
+     *
+     * \return  List of events
+     */
+    static QList<Schedule> readSchedules(const qint64 &userId,
+                                         const QDateTime &startTimestamp,
+                                         const QDateTime &endTimestamp);
+
+    /*!
+     * \brief   Reads schedules from the database for a specific time range for all users
+     *
+     * \param   startTimestamp  Read schedules from and including this timestamp
+     * \param   endTimestamp    Read schedules up to and including this timestamp
+     *
+     * \return  List of events
+     */
+    static QList<Schedule> readSchedules(const QDateTime &startTimestamp,
+                                         const QDateTime &endTimestamp);
+
+    /*!
      * \brief   Adds a new working day to the database
      *
      * \param   startTimestamp  The exact date and time when working day shall start
@@ -60,6 +85,30 @@ public:
      * - End of working day:   2015-12-27 23:59:59
      */
     static bool addWorkingDay(const QDateTime &startTimestamp, const QDateTime &endTimestamp);
+
+    /*!
+     * \brief   Adds a new schedule to the database
+     *
+     * \param   userId          Schedule's user ID
+     * \param   startTimestamp  The exact date and time of start of the schedule
+     * \param   endTimestamp    The exact date and time of end of the schedule
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    static bool addSchedule(const qint64 &userId,
+                            const QDateTime &startTimestamp,
+                            const QDateTime &endTimestamp);
+
+    /*!
+     * \brief   Removes a schedule from the database
+     *
+     * \param   scheduleId  ID of the user mapping
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    static bool removeSchedule(const qint64 &scheduleId);
 
 private:
     /*!

@@ -17,11 +17,3 @@ CREATE TABLE EventChangeLog (
                        CHECK (comment <> ''),
     CHECK (fromValue <> toValue)
 );
-
-CREATE INDEX index_EventChangeLog_id ON EventChangeLog (
-    id
-);
-
-CREATE INDEX index_EventChangeLog_eventId ON EventChangeLog (
-    eventId
-);

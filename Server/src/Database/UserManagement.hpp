@@ -145,7 +145,8 @@ public:
      *
      * \param   userMappingId   ID of the user mapping
      *
-     * \return
+     * \retval  true    Success
+     * \retval  false   Error
      */
     static bool removeUserMapping(const qint64 &userMappingId);
 
