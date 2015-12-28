@@ -86,25 +86,31 @@ public:
     /*!
      * \brief   Calculates working time
      *
+     * \param   timestamp   A point in time for which the working time should be calculated
+     *
      * \return  Working time (in seconds)
      */
-    qint32 calculateWorkingTime() const;
+    qint32 calculateWorkingTime(const QDateTime &timestamp) const;
 
     /*!
      * \brief   Calculates break time
      *
+     * \param   timestamp   A point in time for which the break time should be calculated
+     *
      * \return  Break time (in seconds)
      */
-    qint32 calculateBreakTime() const;
+    qint32 calculateBreakTime(const QDateTime &timestamp) const;
 
     /*!
      * \brief   Calculates total working time
+     *
+     * \param   timestamp   A point in time for which the total working time should be calculated
      *
      * \return  Total working time (in seconds)
      *
      * Total working time is a sum of the working time and (limited) break time.
      */
-    qint32 calculateTotalWorkingTime() const;
+    qint32 calculateTotalWorkingTime(const QDateTime &timestamp) const;
 
     /*!
      * \brief   Gets current state of the user being tracked
@@ -190,15 +196,27 @@ public:
 
 private:
     /*!
-     * \brief   Calculates scheduled time for the specified date and time range
+     * \brief   Calculates scheduled time for the specified time period
      *
      * \param   startTimestamp  Start timestamp
      * \param   endTimestamp    End timestamp
      *
-     * \return  Scheduled time for the specified date and time range (in seconds)
+     * \return  Scheduled time (in seconds)
      */
     qint32 calculateScheduledTime(const QDateTime &startTimestamp,
                                   const QDateTime &endTimestamp) const;
+
+    /*!
+     * \brief   Calculates scheduled time for the specified time periods
+     *
+     * \param   timePeriods Time periods
+     * \param   timestamp   Timestamp up to and including to which the scheduled time needs to be
+     *                      calculated
+     *
+     * \return  Scheduled time (in seconds)
+     */
+    qint32 calculateScheduledTime(const QList<QPair<QDateTime, QDateTime> > &timePeriods,
+                                  const QDateTime &timestamp) const;
 
     /*!
      * \brief   Holds the ID of the user to track
@@ -216,14 +234,14 @@ private:
     QList<Schedule> m_schedules;
 
     /*!
-     * \brief   Holds the current working time (in seconds)
+     * \brief   Holds the working periods
      */
-    qint32 m_workingTime;
+    QList<QPair<QDateTime, QDateTime> > m_workingPeriods;
 
     /*!
-     * \brief   Holds the current break time (in seconds)
+     * \brief   Holds the break time periods
      */
-    qint32 m_breakTime;
+    QList<QPair<QDateTime, QDateTime> > m_breakPeriods;
 
     /*!
      * \brief   Holds the current state of the tracked user
@@ -231,12 +249,9 @@ private:
     State m_state;
 
     /*!
-     * \brief   Holds the timestamp of the last state change
+     * \brief   Holds the timestamp of the last event
      */
-    QDateTime m_stateChangedTimestamp;
-
-    // TODO: re-factor time tracking from a sum of times to a list of date & time ranges? At the
-    //       same time add a parameter for calculation of times at specific timestamp?
+    QDateTime m_lastEventTimestamp;
 
     // TODO: update and extend the unit tests!
 };

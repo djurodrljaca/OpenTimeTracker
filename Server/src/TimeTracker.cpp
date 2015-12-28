@@ -21,10 +21,10 @@ TimeTracker::TimeTracker()
     : m_userId(0LL),
       m_breakTimeCalculator(),
       m_schedules(),
-      m_workingTime(0),
-      m_breakTime(0),
+      m_workingPeriods(),
+      m_breakPeriods(),
       m_state(State_NotWorking),
-      m_stateChangedTimestamp()
+      m_lastEventTimestamp()
 {
 }
 
@@ -32,10 +32,10 @@ TimeTracker::TimeTracker(const TimeTracker &other)
     : m_userId(other.m_userId),
       m_breakTimeCalculator(other.m_breakTimeCalculator),
       m_schedules(other.m_schedules),
-      m_workingTime(other.m_workingTime),
-      m_breakTime(other.m_breakTime),
+      m_workingPeriods(other.m_workingPeriods),
+      m_breakPeriods(other.m_breakPeriods),
       m_state(other.m_state),
-      m_stateChangedTimestamp(other.m_stateChangedTimestamp)
+      m_lastEventTimestamp(other.m_lastEventTimestamp)
 {
 }
 
@@ -46,10 +46,10 @@ TimeTracker &TimeTracker::operator =(const TimeTracker &other)
         m_userId = other.m_userId;
         m_breakTimeCalculator = other.m_breakTimeCalculator;
         m_schedules = other.m_schedules;
-        m_workingTime = other.m_workingTime;
-        m_breakTime = other.m_breakTime;
+        m_workingPeriods = other.m_workingPeriods;
+        m_breakPeriods = other.m_breakPeriods;
         m_state = other.m_state;
-        m_stateChangedTimestamp = other.m_stateChangedTimestamp;
+        m_lastEventTimestamp = other.m_lastEventTimestamp;
     }
 
     return *this;
@@ -61,19 +61,27 @@ bool TimeTracker::isValid() const
 
     if ((m_userId < 1LL) ||
         (!m_breakTimeCalculator.isValid()) ||
-        m_schedules.isEmpty() ||
-        (m_workingTime < 0) ||
-        (m_breakTime < 0))
+        m_schedules.isEmpty())
     {
         valid = false;
     }
     else if (((m_state == State_Working) || (m_state == State_OnBreak)) &&
-             (!m_stateChangedTimestamp.isValid()))
+             (!m_lastEventTimestamp.isValid()))
     {
         valid = false;
     }
-    else if (m_stateChangedTimestamp.isValid())
+    else if (m_workingPeriods.isEmpty() &&
+             m_breakPeriods.isEmpty() &&
+             (m_state == State_NotWorking) &&
+             m_lastEventTimestamp.isValid())
     {
+        // Last event timestamp should be invalid in this case
+        valid = false;
+    }
+    else if (((!m_workingPeriods.isEmpty()) || (!m_breakPeriods.isEmpty())) &&
+             (!m_lastEventTimestamp.isValid()))
+    {
+        // Last event timestamp should be valid in this case
         valid = false;
     }
     else
@@ -101,24 +109,19 @@ void TimeTracker::setUserId(const qint64 &newUserId)
     m_userId = newUserId;
 }
 
-qint32 TimeTracker::calculateWorkingTime() const
+qint32 TimeTracker::calculateWorkingTime(const QDateTime &timestamp) const
 {
     qint32 workingTime = 0;
 
     if (isValid())
     {
-        workingTime = m_workingTime;
-
-        if (m_state == State_Working)
+        if (timestamp.isValid())
         {
-            if (m_stateChangedTimestamp.isValid())
+            workingTime = calculateScheduledTime(m_workingPeriods, timestamp);
+
+            if ((m_state == State_Working) && (m_lastEventTimestamp < timestamp))
             {
-                workingTime += calculateScheduledTime(m_stateChangedTimestamp,
-                                                      QDateTime::currentDateTime());
-            }
-            else
-            {
-                workingTime = -1;
+                workingTime += calculateScheduledTime(m_lastEventTimestamp, timestamp);
             }
         }
     }
@@ -126,24 +129,19 @@ qint32 TimeTracker::calculateWorkingTime() const
     return workingTime;
 }
 
-qint32 TimeTracker::calculateBreakTime() const
+qint32 TimeTracker::calculateBreakTime(const QDateTime &timestamp) const
 {
     qint32 breakTime = 0;
 
     if (isValid())
     {
-        breakTime = m_breakTime;
-
-        if (m_state == State_OnBreak)
+        if (timestamp.isValid())
         {
-            if (m_stateChangedTimestamp.isValid())
+            breakTime = calculateScheduledTime(m_breakPeriods, timestamp);
+
+            if ((m_state == State_OnBreak) && (m_lastEventTimestamp < timestamp))
             {
-                breakTime += calculateScheduledTime(m_stateChangedTimestamp,
-                                                    QDateTime::currentDateTime());
-            }
-            else
-            {
-                breakTime = -1;
+                breakTime += calculateScheduledTime(m_lastEventTimestamp, timestamp);
             }
         }
     }
@@ -151,27 +149,18 @@ qint32 TimeTracker::calculateBreakTime() const
     return breakTime;
 }
 
-qint32 TimeTracker::calculateTotalWorkingTime() const
+qint32 TimeTracker::calculateTotalWorkingTime(const QDateTime &timestamp) const
 {
     qint32 totalWorkingTime = 0;
 
     if (isValid())
     {
         // First get the working and break times
-        const qint32 workingTime = calculateWorkingTime();
-        const qint32 breakTime = calculateBreakTime();
+        const qint32 workingTime = calculateWorkingTime(timestamp);
+        const qint32 breakTime = calculateBreakTime(timestamp);
 
         // Calculate total time
         totalWorkingTime = workingTime + m_breakTimeCalculator.calculate(workingTime, breakTime);
-
-        if (breakTime < breakTimeLimit)
-        {
-            totalWorkingTime += breakTime;
-        }
-        else
-        {
-            totalWorkingTime += static_cast<qint32>(round(breakTimeLimit));
-        }
     }
 
     return totalWorkingTime;
@@ -195,7 +184,7 @@ bool TimeTracker::startWorkday(const BreakTimeCalculator &breakTimeCalculator,
         {
             if ((!schedule.isValid()) || (schedule.userId() != m_userId))
             {
-                valid = false;
+                success = false;
                 break;
             }
         }
@@ -204,10 +193,10 @@ bool TimeTracker::startWorkday(const BreakTimeCalculator &breakTimeCalculator,
         {
             m_breakTimeCalculator = breakTimeCalculator;
             m_schedules = schedules;
-            m_workingTime = 0;
-            m_breakTime = 0;
+            m_workingPeriods.clear();
+            m_breakPeriods.clear();
             m_state = State_NotWorking;
-            m_stateChangedTimestamp = QDateTime();
+            m_lastEventTimestamp = QDateTime();
 
             success = isValid();
         }
@@ -226,10 +215,14 @@ bool TimeTracker::startWorking(const QDateTime &timestamp)
         // Check if timestamp is valid
         if (timestamp.isValid())
         {
-            // Start tracking users work time
-            m_state = State_Working;
-            m_stateChangedTimestamp = timestamp;
-            success = true;
+            if ((m_lastEventTimestamp.isValid() && (m_lastEventTimestamp <= timestamp)) ||
+                (!m_lastEventTimestamp.isValid()))
+            {
+                // Start tracking users work time
+                m_state = State_Working;
+                m_lastEventTimestamp = timestamp;
+                success = true;
+            }
         }
     }
 
@@ -244,14 +237,14 @@ bool TimeTracker::startBreak(const QDateTime &timestamp)
     if ((isValid()) && (m_state == State_Working))
     {
         // Check if timestamp comes after the time user started working
-        if (timestamp.isValid() && (timestamp >= m_stateChangedTimestamp))
+        if (timestamp.isValid() && (m_lastEventTimestamp <= timestamp))
         {
-            // Add latest working time interval to the cumulative working time
-            m_workingTime += calculateScheduledTime(m_stateChangedTimestamp, timestamp);
+            // Add latest working period interval to the cumulative working periods
+            m_workingPeriods.append(QPair<QDateTime, QDateTime>(m_lastEventTimestamp, timestamp));
 
             // Start tracking users break time
             m_state = State_OnBreak;
-            m_stateChangedTimestamp = timestamp;
+            m_lastEventTimestamp = timestamp;
             success = true;
         }
     }
@@ -267,14 +260,14 @@ bool TimeTracker::endBreak(const QDateTime &timestamp)
     if ((isValid()) && (m_state == State_OnBreak))
     {
         // Check if timestamp comes after the time user started their break
-        if (timestamp.isValid() && (timestamp >= m_stateChangedTimestamp))
+        if (m_lastEventTimestamp.isValid() && (m_lastEventTimestamp <= timestamp))
         {
-            // Add latest break time interval to the cumulative break time
-            m_breakTime += calculateScheduledTime(m_stateChangedTimestamp, timestamp);
+            // Add latest break period interval to the cumulative break periods
+            m_breakPeriods.append(QPair<QDateTime, QDateTime>(m_lastEventTimestamp, timestamp));
 
             // Start tracking users work time
             m_state = State_Working;
-            m_stateChangedTimestamp = timestamp;
+            m_lastEventTimestamp = timestamp;
             success = true;
         }
     }
@@ -290,14 +283,14 @@ bool TimeTracker::stopWorking(const QDateTime &timestamp)
     if ((isValid()) && (m_state == State_Working))
     {
         // Check if timestamp comes after the time user started working
-        if (timestamp.isValid() && (timestamp >= m_stateChangedTimestamp))
+        if (m_lastEventTimestamp.isValid() && (m_lastEventTimestamp <= timestamp))
         {
-            // Add latest working time interval to the cumulative working time
-            m_workingTime += calculateScheduledTime(m_stateChangedTimestamp, timestamp);
+            // Add latest working period interval to the cumulative working periods
+            m_workingPeriods.append(QPair<QDateTime, QDateTime>(m_lastEventTimestamp, timestamp));
 
             // Stop tracking users working time
             m_state = State_NotWorking;
-            m_stateChangedTimestamp = timestamp;
+            m_lastEventTimestamp = timestamp;
             success = true;
         }
     }
@@ -335,4 +328,40 @@ qint32 TimeTracker::calculateScheduledTime(const QDateTime &startTimestamp,
         }
     }
     return scheduledTime;
+}
+
+qint32 TimeTracker::calculateScheduledTime(const QList<QPair<QDateTime, QDateTime> > &timePeriods,
+                                           const QDateTime &timestamp) const
+{
+    qint32 time = 0;
+
+    // Make a sum of elapsed times from all time periods considering the schedule
+    for (int i = 0; i < timePeriods.size(); i++)
+    {
+        // Calculate elapsed time
+        const QPair<QDateTime, QDateTime> &timePeriod = timePeriods.at(i);
+        bool limitReached = false;
+
+        if (timestamp <= timePeriod.first)
+        {
+            limitReached = true;
+        }
+        else if (timestamp <= timePeriod.second)
+        {
+            time += calculateScheduledTime(timePeriod.first, timestamp);
+            limitReached = true;
+        }
+        else
+        {
+            time += calculateScheduledTime(timePeriod.first, timePeriod.second);
+        }
+
+        // Stop the calculation when the limit is reached
+        if (limitReached)
+        {
+            break;
+        }
+    }
+
+    return time;
 }

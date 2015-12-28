@@ -75,7 +75,7 @@ public:
      *
      * \return  Allowed break time
      */
-    qint32 calculate(const qint32 workingTime, const qint32 breakTime);
+    qint32 calculate(const qint32 workingTime, const qint32 breakTime) const;
 
 private:
     /*!

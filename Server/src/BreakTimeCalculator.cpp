@@ -61,7 +61,7 @@ bool BreakTimeCalculator::initialize(const double &workingTime, const double &al
     return success;
 }
 
-qint32 BreakTimeCalculator::calculate(const qint32 workingTime, const qint32 breakTime)
+qint32 BreakTimeCalculator::calculate(const qint32 workingTime, const qint32 breakTime) const
 {
     qint32 allowedBreakTime = 0;
 
@@ -73,7 +73,7 @@ qint32 BreakTimeCalculator::calculate(const qint32 workingTime, const qint32 bre
 
             if (breakTime > limit)
             {
-                allowedBreakTime = static_cast<qint32>(round(limt));
+                allowedBreakTime = static_cast<qint32>(round(limit));
             }
             else
             {
