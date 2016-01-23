@@ -16,10 +16,14 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 HEADERS += \
+    ../../src/BreakTimeCalculator.hpp \
+    ../../src/Schedule.hpp \
     ../../src/TimeTracker.hpp
 
 SOURCES += \
     tst_TimeTrackerTest.cpp \
+    ../../src/BreakTimeCalculator.cpp \
+    ../../src/Schedule.cpp \
     ../../src/TimeTracker.cpp
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"

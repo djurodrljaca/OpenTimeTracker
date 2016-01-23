@@ -56,6 +56,7 @@ bool BreakTimeCalculator::initialize(const double &workingTime, const double &al
     if ((workingTime > 0.0) && (allowedBreakTime >= 0.0))
     {
         m_coefficient = allowedBreakTime / workingTime;
+        success = true;
     }
 
     return success;

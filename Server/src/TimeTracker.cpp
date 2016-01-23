@@ -60,8 +60,7 @@ bool TimeTracker::isValid() const
     bool valid = true;
 
     if ((m_userId < 1LL) ||
-        (!m_breakTimeCalculator.isValid()) ||
-        m_schedules.isEmpty())
+        (!m_breakTimeCalculator.isValid()))
     {
         valid = false;
     }
@@ -117,10 +116,12 @@ qint32 TimeTracker::calculateWorkingTime(const QDateTime &timestamp) const
     {
         if (timestamp.isValid())
         {
+            // Calculate working time for the already logged working periods
             workingTime = calculateScheduledTime(m_workingPeriods, timestamp);
 
             if ((m_state == State_Working) && (m_lastEventTimestamp < timestamp))
             {
+                // Calculate working time for the current working period
                 workingTime += calculateScheduledTime(m_lastEventTimestamp, timestamp);
             }
         }
@@ -137,10 +138,12 @@ qint32 TimeTracker::calculateBreakTime(const QDateTime &timestamp) const
     {
         if (timestamp.isValid())
         {
+            // Calculate break time for the already logged break periods
             breakTime = calculateScheduledTime(m_breakPeriods, timestamp);
 
             if ((m_state == State_OnBreak) && (m_lastEventTimestamp < timestamp))
             {
+                // Calculate break time for the current break period
                 breakTime += calculateScheduledTime(m_lastEventTimestamp, timestamp);
             }
         }
@@ -160,7 +163,8 @@ qint32 TimeTracker::calculateTotalWorkingTime(const QDateTime &timestamp) const
         const qint32 breakTime = calculateBreakTime(timestamp);
 
         // Calculate total time
-        totalWorkingTime = workingTime + m_breakTimeCalculator.calculate(workingTime, breakTime);
+        const qint32 allowedBreakTime = m_breakTimeCalculator.calculate(workingTime, breakTime);
+        totalWorkingTime = workingTime + allowedBreakTime;
     }
 
     return totalWorkingTime;
@@ -179,16 +183,40 @@ bool TimeTracker::startWorkday(const BreakTimeCalculator &breakTimeCalculator,
     if (breakTimeCalculator.isValid())
     {
         success = true;
+        QDateTime endOfLastSchedule;
 
-        foreach (const Schedule &schedule, m_schedules)
+        // Verify schedules
+        foreach (const Schedule &schedule, schedules)
         {
             if ((!schedule.isValid()) || (schedule.userId() != m_userId))
             {
+                // Invalid schedule
                 success = false;
+            }
+            else if (endOfLastSchedule.isNull())
+            {
+                // This is the first schedule checked, save its end timestamp
+                endOfLastSchedule = schedule.endTimestamp();
+            }
+            else if (endOfLastSchedule <= schedule.startTimestamp())
+            {
+                // This schedule comes after the last schedule, save its end timestamp
+                endOfLastSchedule = schedule.endTimestamp();
+            }
+            else
+            {
+                // Error, this schedule overlaps with the previous schedule
+                success = false;
+            }
+
+            // On failure exit the loop
+            if (!success)
+            {
                 break;
             }
         }
 
+        // Start workday
         if (success)
         {
             m_breakTimeCalculator = breakTimeCalculator;
@@ -303,30 +331,41 @@ qint32 TimeTracker::calculateScheduledTime(const QDateTime &startTimestamp,
 {
     qint32 scheduledTime = 0;
 
-    if (isValid())
+    if (isValid() && (startTimestamp < endTimestamp))
     {
         QDateTime timestamp = startTimestamp;
 
         foreach (const Schedule &schedule, m_schedules)
         {
-            // Check for scheduled time
-            if ((schedule.startTimestamp() <= timestamp) && (timestamp <= schedule.endTimestamp()))
+            // Check if all time has been accounted for
+            if (endTimestamp <= schedule.startTimestamp())
             {
-                if (endTimestamp < schedule.endTimestamp())
-                {
-                    // All time has been accounted for, stop calculation
-                    scheduledTime += timestamp.secsTo(endTimestamp);
-                    break;
-                }
-                else
-                {
-                    // All time has not been accounted for yet, continue calculation
-                    scheduledTime += timestamp.secsTo(schedule.endTimestamp());
-                    timestamp = schedule.endTimestamp();
-                }
+                // Stop calculation
+                break;
             }
+
+            // Calculate start timestamp based on the schedule
+            QDateTime scheduledStartTimestamp = timestamp;
+
+            if (scheduledStartTimestamp < schedule.startTimestamp())
+            {
+                scheduledStartTimestamp = schedule.startTimestamp();
+            }
+
+            // Calculate end timestamp based on the schedule
+            QDateTime scheduledEndTimestamp = endTimestamp;
+
+            if (scheduledEndTimestamp > schedule.endTimestamp())
+            {
+                scheduledEndTimestamp = schedule.endTimestamp();
+            }
+
+            // Calculate elapsed time
+            scheduledTime += scheduledStartTimestamp.secsTo(scheduledEndTimestamp);
+            timestamp = scheduledEndTimestamp;
         }
     }
+
     return scheduledTime;
 }
 

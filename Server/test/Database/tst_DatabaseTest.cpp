@@ -18,6 +18,7 @@
 #include <QFile>
 #include "../../src/Database/DatabaseManagement.hpp"
 #include "../../src/Database/EventManagement.hpp"
+#include "../../src/Database/ScheduleManagement.hpp"
 #include "../../src/Database/SettingsManagement.hpp"
 #include "../../src/Database/UserManagement.hpp"
 
@@ -39,6 +40,23 @@ private Q_SLOTS:
     void testCaseConnect();
     void testCaseDisconnect();
     void testCaseReconnect();
+
+    // Settings unit tests
+    void testCaseReadSettingsEmptyDatabase();
+    void testCaseAddSettings();
+    void testCaseAddSettingFail_data();
+    void testCaseAddSettingFail();
+    void testCaseChangeSetting();
+    void testCaseChangeSettingFail();
+    void testCaseReadSettingsNonEmptyDatabase();
+
+    // Working days unit tests
+    void testCaseReadWorkingDaysEmptyDatabase();
+    void testCaseAddWorkingDay_data();
+    void testCaseAddWorkingDay();
+    void testCaseAddWorkingDayFail_data();
+    void testCaseAddWorkingDayFail();
+    void testCaseReadWorkingDaysNonEmptyDatabase();
 
     // User unit tests
     void testCaseReadUsersEmptyDatabase();
@@ -72,6 +90,16 @@ private Q_SLOTS:
     void testCaseRemoveUserMapping();
     void testCaseReadUserMappingsNonEmptyDatabase();
 
+    // Schedules unit tests
+    void testCaseReadSchedulesEmptyDatabase();
+    void testCaseAddSchedule_data();
+    void testCaseAddSchedule();
+    void testCaseAddScheduleFail_data();
+    void testCaseAddScheduleFail();
+    void testCaseRemoveSchedule();
+    void testCaseReadSchedulesNonEmptyDatabase();
+    void testCaseReadSchedulesUserId();
+
     // Event unit tests
     void testCaseReadEventsEmptyDatabase();
     void testCaseAddEvent_data();
@@ -89,15 +117,6 @@ private Q_SLOTS:
     void testCaseChangeEventEnableState();
     void testCaseChangeEventEnableStateFail();
     void testCaseReadEventChangeLogChangedEvent();
-
-    // Settings unit tests
-    void testCaseReadSettingsEmptyDatabase();
-    void testCaseAddSettings();
-    void testCaseAddSettingFail_data();
-    void testCaseAddSettingFail();
-    void testCaseChangeSetting();
-    void testCaseChangeSettingFail();
-    void testCaseReadSettingsNonEmptyDatabase();
 
 private:
     void removeDatabaseFile();
@@ -262,6 +281,302 @@ void DatabaseTest::testCaseReconnect()
 
     // Check if really connected
     QCOMPARE(DatabaseManagement::isConnected(), true);
+}
+
+// Setting unit tests ******************************************************************************
+
+void DatabaseTest::testCaseReadSettingsEmptyDatabase()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read settings
+    QMap<QString, QVariant> settings = SettingsManagement::readSettings();
+
+    QVERIFY(settings.isEmpty());
+}
+
+void DatabaseTest::testCaseAddSettings()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Prepare new settings
+    QMap<QString, QVariant> settings;
+    settings["setting1"] = "stringValue";
+    settings["setting2"] = 123;
+
+    // Add settings
+    QVERIFY(SettingsManagement::addSettings(settings));
+}
+
+void DatabaseTest::testCaseAddSettingFail_data()
+{
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<QVariant>("value");
+
+    // Invalid name
+    QTest::newRow("1") << QString() << QVariant(QString());
+    QTest::newRow("2") << "" << QVariant(QString());
+
+    // Existing name
+    QTest::newRow("3") << "setting1" << QVariant("newStringValue");
+}
+
+void DatabaseTest::testCaseAddSettingFail()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Add setting
+    QFETCH(QString, name);
+    QFETCH(QVariant, value);
+
+    // Prepare new (invalid) setting
+    QMap<QString, QVariant> settings;
+    settings[name] = value;
+
+    // Add (invalid) setting
+    QVERIFY(!SettingsManagement::addSettings(settings));
+}
+
+void DatabaseTest::testCaseChangeSetting()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Check if setting exists
+    const QString name("setting2");
+    QMap<QString, QVariant> settingsOld = SettingsManagement::readSettings();
+    QVERIFY(settingsOld.contains(name));
+
+    // Make sure the setting will be changed
+    const QVariant newValue(999);
+    QVERIFY(settingsOld[name] != newValue);
+
+    // Change setting
+    QVERIFY(SettingsManagement::changeSetting(name, newValue));
+
+    // Make sure the setting was changed
+    QMap<QString, QVariant> settingsNew = SettingsManagement::readSettings();
+    QVERIFY(settingsNew.contains(name));
+    QCOMPARE(settingsNew[name], newValue);
+}
+
+void DatabaseTest::testCaseChangeSettingFail()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Nonexistent setting
+    QVERIFY(!SettingsManagement::changeSetting(QString("settingX"), QString()));
+}
+
+void DatabaseTest::testCaseReadSettingsNonEmptyDatabase()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read settings
+    QMap<QString, QVariant> settings = SettingsManagement::readSettings();
+
+    QCOMPARE(settings.size(), 2);
+
+    // Setting 1
+    QVERIFY(settings.contains("setting1"));
+    QCOMPARE(settings["setting1"], QVariant("stringValue"));
+
+    // Setting 2
+    QVERIFY(settings.contains("setting2"));
+    QCOMPARE(settings["setting2"], QVariant(999));
+
+}
+
+// Working days unit tests *************************************************************************
+
+void DatabaseTest::testCaseReadWorkingDaysEmptyDatabase()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read working day for the specified timestamp
+    const QDateTime timestamp(QDate(2016, 01, 02), QTime(15, 00, 00));
+    const QPair<QDateTime, QDateTime> workingDay = ScheduleManagement::readWorkingDay(timestamp);
+
+    // Working day time range should be invalid
+    QVERIFY(workingDay.first.isValid() == false);
+    QVERIFY(workingDay.second.isValid() == false);
+}
+
+void DatabaseTest::testCaseAddWorkingDay_data()
+{
+    QTest::addColumn<QDateTime>("start");
+    QTest::addColumn<QDateTime>("end");
+
+    QTest::newRow("1") << QDateTime(QDate(2016, 01, 01), QTime(7, 00, 00))
+                       << QDateTime(QDate(2016, 01, 01), QTime(22, 59, 59));
+
+    QTest::newRow("2") << QDateTime(QDate(2016, 01, 02), QTime(7, 00, 00))
+                       << QDateTime(QDate(2016, 01, 02), QTime(22, 59, 59));
+}
+
+void DatabaseTest::testCaseAddWorkingDay()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Add working day
+    QFETCH(QDateTime, start);
+    QFETCH(QDateTime, end);
+
+    QVERIFY(ScheduleManagement::addWorkingDay(start, end));
+}
+
+void DatabaseTest::testCaseAddWorkingDayFail_data()
+{
+    QTest::addColumn<QDateTime>("start");
+    QTest::addColumn<QDateTime>("end");
+
+    // Invalid start and end timestamp
+    QTest::newRow("1") << QDateTime()
+                       << QDateTime(QDate(2016, 01, 01), QTime(22, 59, 59));
+
+    QTest::newRow("2") << QDateTime(QDate(2016, 01, 02), QTime(7, 00, 00))
+                       << QDateTime();
+
+    // Start bigger than end
+    QTest::newRow("3") << QDateTime(QDate(2016, 01, 01), QTime(22, 59, 59))
+                       << QDateTime(QDate(2016, 01, 01), QTime(7, 00, 00));
+}
+
+void DatabaseTest::testCaseAddWorkingDayFail()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Add working day (expect failure)
+    QFETCH(QDateTime, start);
+    QFETCH(QDateTime, end);
+
+    QVERIFY(!ScheduleManagement::addWorkingDay(start, end));
+}
+
+void DatabaseTest::testCaseReadWorkingDaysNonEmptyDatabase()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read working day 1
+    QDateTime timestamp(QDate(2016, 01, 01), QTime(15, 00, 00));
+    QPair<QDateTime, QDateTime> workingDay = ScheduleManagement::readWorkingDay(timestamp);
+
+    QCOMPARE(workingDay.first, QDateTime(QDate(2016, 01, 01), QTime(7, 00, 00)));
+    QCOMPARE(workingDay.second, QDateTime(QDate(2016, 01, 01), QTime(22, 59, 59)));
+
+    // Timestamp a second before working day 2
+    timestamp = QDateTime(QDate(2016, 01, 02), QTime(6, 59, 59));
+    workingDay = ScheduleManagement::readWorkingDay(timestamp);
+
+    QVERIFY(!workingDay.first.isValid());
+    QVERIFY(!workingDay.second.isValid());
+
+    // Read working day 2: start
+    timestamp = QDateTime(QDate(2016, 01, 02), QTime(7, 00, 00));
+    workingDay = ScheduleManagement::readWorkingDay(timestamp);
+
+    QCOMPARE(workingDay.first, QDateTime(QDate(2016, 01, 02), QTime(7, 00, 00)));
+    QCOMPARE(workingDay.second, QDateTime(QDate(2016, 01, 02), QTime(22, 59, 59)));
+
+    // Read working day 2: middle
+    timestamp = QDateTime(QDate(2016, 01, 02), QTime(15, 00, 00));
+    workingDay = ScheduleManagement::readWorkingDay(timestamp);
+
+    QCOMPARE(workingDay.first, QDateTime(QDate(2016, 01, 02), QTime(7, 00, 00)));
+    QCOMPARE(workingDay.second, QDateTime(QDate(2016, 01, 02), QTime(22, 59, 59)));
+
+    // Read working day 2: end
+    timestamp = QDateTime(QDate(2016, 01, 02), QTime(22, 59, 59));
+    workingDay = ScheduleManagement::readWorkingDay(timestamp);
+
+    QCOMPARE(workingDay.first, QDateTime(QDate(2016, 01, 02), QTime(7, 00, 00)));
+    QCOMPARE(workingDay.second, QDateTime(QDate(2016, 01, 02), QTime(22, 59, 59)));
+
+    // Timestamp a second after working day 2
+    timestamp = QDateTime(QDate(2016, 01, 02), QTime(23, 00, 00));
+    workingDay = ScheduleManagement::readWorkingDay(timestamp);
+
+    QVERIFY(!workingDay.first.isValid());
+    QVERIFY(!workingDay.second.isValid());
 }
 
 // User unit tests *********************************************************************************
@@ -791,6 +1106,206 @@ void DatabaseTest::testCaseReadUserMappingsNonEmptyDatabase()
     QCOMPARE(userMappings[2].userId(), 2LL);
 }
 
+// Schedule unit tests *****************************************************************************
+
+void DatabaseTest::testCaseReadSchedulesEmptyDatabase()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read schedules
+    QList<Schedule> schedules = ScheduleManagement::readSchedules(
+                                    QDateTime(QDate(2016, 01, 02), QTime(7, 00, 00)),
+                                    QDateTime(QDate(2016, 01, 02), QTime(22, 59, 59)));
+
+    QVERIFY(schedules.isEmpty());
+}
+
+void DatabaseTest::testCaseAddSchedule_data()
+{
+    QTest::addColumn<qint64>("userId");
+    QTest::addColumn<QDateTime>("startTimestamp");
+    QTest::addColumn<QDateTime>("endTimestamp");
+
+    // Schedules for user 1 for working day 1
+    QTest::newRow("1") << 1LL
+                       << QDateTime(QDate(2016, 01, 01), QTime(8, 00, 00))
+                       << QDateTime(QDate(2016, 01, 01), QTime(12, 00, 00));
+    QTest::newRow("2") << 1LL
+                       << QDateTime(QDate(2016, 01, 01), QTime(14, 00, 00))
+                       << QDateTime(QDate(2016, 01, 01), QTime(18, 00, 00));
+
+    // Schedules for user 1 for working day 2
+    QTest::newRow("3") << 1LL
+                       << QDateTime(QDate(2016, 01, 02), QTime(8, 00, 00))
+                       << QDateTime(QDate(2016, 01, 02), QTime(16, 00, 00));
+
+    // Schedules for user 2 for working day 1
+    QTest::newRow("4") << 2LL
+                       << QDateTime(QDate(2016, 01, 01), QTime(8, 00, 00))
+                       << QDateTime(QDate(2016, 01, 01), QTime(12, 00, 00));
+    QTest::newRow("5") << 2LL
+                       << QDateTime(QDate(2016, 01, 01), QTime(14, 00, 00))
+                       << QDateTime(QDate(2016, 01, 01), QTime(18, 00, 00));
+
+    // Schedules for user 2 for working day 2
+    QTest::newRow("6") << 2LL
+                       << QDateTime(QDate(2016, 01, 02), QTime(14, 00, 00))
+                       << QDateTime(QDate(2016, 01, 02), QTime(22, 00, 00));
+}
+
+void DatabaseTest::testCaseAddSchedule()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Add event
+    QFETCH(qint64, userId);
+    QFETCH(QDateTime, startTimestamp);
+    QFETCH(QDateTime, endTimestamp);
+
+    QVERIFY(ScheduleManagement::addSchedule(userId, startTimestamp, endTimestamp));
+}
+
+void DatabaseTest::testCaseAddScheduleFail_data()
+{
+    QTest::addColumn<qint64>("userId");
+    QTest::addColumn<QDateTime>("startTimestamp");
+    QTest::addColumn<QDateTime>("endTimestamp");
+
+    // Invalid user ID
+    QTest::newRow("1") << 5LL
+                       << QDateTime()
+                       << QDateTime(QDate(2016, 01, 01), QTime(12, 00, 00));
+
+    // Invalid start timestamp
+    QTest::newRow("2") << 1LL
+                       << QDateTime()
+                       << QDateTime(QDate(2016, 01, 01), QTime(12, 00, 00));
+
+    // Invalid end timestamp
+    QTest::newRow("3") << 1LL
+                       << QDateTime(QDate(2016, 01, 01), QTime(8, 00, 00))
+                       << QDateTime();
+}
+
+void DatabaseTest::testCaseAddScheduleFail()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Add event
+    QFETCH(qint64, userId);
+    QFETCH(QDateTime, startTimestamp);
+    QFETCH(QDateTime, endTimestamp);
+
+    QVERIFY(!ScheduleManagement::addSchedule(userId, startTimestamp, endTimestamp));
+}
+
+void DatabaseTest::testCaseRemoveSchedule()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Remove schedule (schedule for user 2 for working day 2)
+    QVERIFY(ScheduleManagement::removeSchedule(6LL));
+}
+
+void DatabaseTest::testCaseReadSchedulesNonEmptyDatabase()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read schedules (all users, working day 1)
+    QList<Schedule> schedules = ScheduleManagement::readSchedules(
+                                    QDateTime(QDate(2016, 01, 01), QTime(7, 00, 00)),
+                                    QDateTime(QDate(2016, 01, 01), QTime(22, 59, 59)));
+
+    QCOMPARE(schedules.size(), 4);
+
+    // User 1
+    QCOMPARE(schedules[0].userId(), 1LL);
+    QCOMPARE(schedules[0].startTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(8, 00, 00)));
+    QCOMPARE(schedules[0].endTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(12, 00, 00)));
+
+    QCOMPARE(schedules[1].userId(), 1LL);
+    QCOMPARE(schedules[1].startTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(14, 00, 00)));
+    QCOMPARE(schedules[1].endTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(18, 00, 00)));
+
+    // User 2
+    QCOMPARE(schedules[2].userId(), 2LL);
+    QCOMPARE(schedules[2].startTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(8, 00, 00)));
+    QCOMPARE(schedules[2].endTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(12, 00, 00)));
+
+    QCOMPARE(schedules[3].userId(), 2LL);
+    QCOMPARE(schedules[3].startTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(14, 00, 00)));
+    QCOMPARE(schedules[3].endTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(18, 00, 00)));
+}
+
+void DatabaseTest::testCaseReadSchedulesUserId()
+{
+    using namespace OpenTimeTracker::Server;
+    using namespace OpenTimeTracker::Server::Database;
+
+    // Make sure the we are connected to the database
+    if (DatabaseManagement::isConnected() == false)
+    {
+        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
+        QCOMPARE(DatabaseManagement::isConnected(), true);
+    }
+
+    // Read schedules (user 1, working day 1)
+    QList<Schedule> schedules = ScheduleManagement::readSchedules(
+                                    1LL,
+                                    QDateTime(QDate(2016, 01, 01), QTime(7, 00, 00)),
+                                    QDateTime(QDate(2016, 01, 01), QTime(22, 59, 59)));
+
+    QCOMPARE(schedules.size(), 2);
+
+    QCOMPARE(schedules[0].userId(), 1LL);
+    QCOMPARE(schedules[0].startTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(8, 00, 00)));
+    QCOMPARE(schedules[0].endTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(12, 00, 00)));
+
+    QCOMPARE(schedules[1].userId(), 1LL);
+    QCOMPARE(schedules[1].startTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(14, 00, 00)));
+    QCOMPARE(schedules[1].endTimestamp(), QDateTime(QDate(2016, 01, 01), QTime(18, 00, 00)));
+}
+
 // Event unit tests ********************************************************************************
 
 void DatabaseTest::testCaseReadEventsEmptyDatabase()
@@ -867,6 +1382,7 @@ void DatabaseTest::testCaseAddEvent()
     QFETCH(QDateTime, timestamp);
     QFETCH(qint64, userId);
     QFETCH(Event::Type, type);
+
     QVERIFY(EventManagement::addEvent(timestamp, userId, type));
 }
 
@@ -1217,157 +1733,6 @@ void DatabaseTest::testCaseReadEventChangeLogChangedEvent()
     QCOMPARE(eventChangeLog[2].fieldName(), QString("enabled"));
     QCOMPARE(fromValueEnableState, true);
     QCOMPARE(toValueEnableState, false);
-}
-
-// Setting unit tests ******************************************************************************
-
-void DatabaseTest::testCaseReadSettingsEmptyDatabase()
-{
-    using namespace OpenTimeTracker::Server;
-    using namespace OpenTimeTracker::Server::Database;
-
-    // Make sure the we are connected to the database
-    if (DatabaseManagement::isConnected() == false)
-    {
-        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
-        QCOMPARE(DatabaseManagement::isConnected(), true);
-    }
-
-    // Read settings
-    QMap<QString, QVariant> settings = SettingsManagement::readSettings();
-
-    QVERIFY(settings.isEmpty());
-}
-
-void DatabaseTest::testCaseAddSettings()
-{
-    using namespace OpenTimeTracker::Server;
-    using namespace OpenTimeTracker::Server::Database;
-
-    // Make sure the we are connected to the database
-    if (DatabaseManagement::isConnected() == false)
-    {
-        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
-        QCOMPARE(DatabaseManagement::isConnected(), true);
-    }
-
-    // Prepare new settings
-    QMap<QString, QVariant> settings;
-    settings["setting1"] = "stringValue";
-    settings["setting2"] = 123;
-
-    // Add settings
-    QVERIFY(SettingsManagement::addSettings(settings));
-}
-
-void DatabaseTest::testCaseAddSettingFail_data()
-{
-    QTest::addColumn<QString>("name");
-    QTest::addColumn<QVariant>("value");
-
-    // Invalid name
-    QTest::newRow("1") << QString() << QVariant(QString());
-    QTest::newRow("2") << "" << QVariant(QString());
-
-    // Existing name
-    QTest::newRow("3") << "setting1" << QVariant("newStringValue");
-}
-
-void DatabaseTest::testCaseAddSettingFail()
-{
-    using namespace OpenTimeTracker::Server;
-    using namespace OpenTimeTracker::Server::Database;
-
-    // Make sure the we are connected to the database
-    if (DatabaseManagement::isConnected() == false)
-    {
-        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
-        QCOMPARE(DatabaseManagement::isConnected(), true);
-    }
-
-    // Add setting
-    QFETCH(QString, name);
-    QFETCH(QVariant, value);
-
-    // Prepare new (invalid) setting
-    QMap<QString, QVariant> settings;
-    settings[name] = value;
-
-    // Add (invalid) setting
-    QVERIFY(!SettingsManagement::addSettings(settings));
-}
-
-void DatabaseTest::testCaseChangeSetting()
-{
-    using namespace OpenTimeTracker::Server;
-    using namespace OpenTimeTracker::Server::Database;
-
-    // Make sure the we are connected to the database
-    if (DatabaseManagement::isConnected() == false)
-    {
-        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
-        QCOMPARE(DatabaseManagement::isConnected(), true);
-    }
-
-    // Check if setting exists
-    const QString name("setting2");
-    QMap<QString, QVariant> settingsOld = SettingsManagement::readSettings();
-    QVERIFY(settingsOld.contains(name));
-
-    // Make sure the setting will be changed
-    const QVariant newValue(999);
-    QVERIFY(settingsOld[name] != newValue);
-
-    // Change setting
-    QVERIFY(SettingsManagement::changeSetting(name, newValue));
-
-    // Make sure the setting was changed
-    QMap<QString, QVariant> settingsNew = SettingsManagement::readSettings();
-    QVERIFY(settingsNew.contains(name));
-    QCOMPARE(settingsNew[name], newValue);
-}
-
-void DatabaseTest::testCaseChangeSettingFail()
-{
-    using namespace OpenTimeTracker::Server;
-    using namespace OpenTimeTracker::Server::Database;
-
-    // Make sure the we are connected to the database
-    if (DatabaseManagement::isConnected() == false)
-    {
-        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
-        QCOMPARE(DatabaseManagement::isConnected(), true);
-    }
-
-    // Nonexistent setting
-    QVERIFY(!SettingsManagement::changeSetting(QString("settingX"), QString()));
-}
-
-void DatabaseTest::testCaseReadSettingsNonEmptyDatabase()
-{
-    using namespace OpenTimeTracker::Server;
-    using namespace OpenTimeTracker::Server::Database;
-
-    // Make sure the we are connected to the database
-    if (DatabaseManagement::isConnected() == false)
-    {
-        QVERIFY(DatabaseManagement::connect(m_databaseFilePath));
-        QCOMPARE(DatabaseManagement::isConnected(), true);
-    }
-
-    // Read settings
-    QMap<QString, QVariant> settings = SettingsManagement::readSettings();
-
-    QCOMPARE(settings.size(), 2);
-
-    // Setting 1
-    QVERIFY(settings.contains("setting1"));
-    QCOMPARE(settings["setting1"], QVariant("stringValue"));
-
-    // Setting 2
-    QVERIFY(settings.contains("setting2"));
-    QCOMPARE(settings["setting2"], QVariant(999));
-
 }
 
 QTEST_APPLESS_MAIN(DatabaseTest)

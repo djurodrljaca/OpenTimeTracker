@@ -57,6 +57,14 @@ bool Schedule::isValid() const
     {
         valid = false;
     }
+    else if (m_startTimestamp >= m_endTimestamp)
+    {
+        valid = false;
+    }
+    else
+    {
+        // Valid
+    }
 
     return valid;
 }

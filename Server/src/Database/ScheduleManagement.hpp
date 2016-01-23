@@ -34,7 +34,7 @@ class ScheduleManagement
 {
 public:
     /*!
-     * \brief   Reads all working day time range
+     * \brief   Reads working day time range
      *
      * \param   timestamp   Timestamp that is within the working day time range
      *

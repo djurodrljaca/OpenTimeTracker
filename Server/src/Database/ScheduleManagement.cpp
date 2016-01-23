@@ -103,8 +103,8 @@ QList<Schedule> Database::ScheduleManagement::readSchedules(const qint64 &userId
             // Execute SQL command (timestamps in the database are stored in UTC)
             QMap<QString, QVariant> values;
             values[":userId"] = userId;
-            values[":startTimestamp"] = startTimestamp.toUTC().toString(Qt::ISODate);
-            values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
+            values[":startOfWorkingDay"] = startTimestamp.toUTC().toString(Qt::ISODate);
+            values[":endOfWorkingDay"] = endTimestamp.toUTC().toString(Qt::ISODate);
 
             QList<QMap<QString, QVariant> > results;
 
@@ -149,8 +149,8 @@ QList<Schedule> Database::ScheduleManagement::readSchedules(const QDateTime &sta
         {
             // Execute SQL command (timestamps in the database are stored in UTC)
             QMap<QString, QVariant> values;
-            values[":startTimestamp"] = startTimestamp.toUTC().toString(Qt::ISODate);
-            values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
+            values[":startOfWorkingDay"] = startTimestamp.toUTC().toString(Qt::ISODate);
+            values[":endOfWorkingDay"] = endTimestamp.toUTC().toString(Qt::ISODate);
 
             QList<QMap<QString, QVariant> > results;
 

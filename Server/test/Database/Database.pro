@@ -18,10 +18,12 @@ TEMPLATE = app
 HEADERS += \
     ../../src/Database/DatabaseManagement.hpp \
     ../../src/Database/EventManagement.hpp \
+    ../../src/Database/ScheduleManagement.hpp \
     ../../src/Database/SettingsManagement.hpp \
     ../../src/Database/UserManagement.hpp \
     ../../src/Event.hpp \
     ../../src/EventChangeLogItem.hpp \
+    ../../src/Schedule.hpp \
     ../../src/User.hpp \
     ../../src/UserGroup.hpp \
     ../../src/UserMapping.hpp
@@ -30,10 +32,12 @@ SOURCES += \
     tst_DatabaseTest.cpp \
     ../../src/Database/DatabaseManagement.cpp \
     ../../src/Database/EventManagement.cpp \
+    ../../src/Database/ScheduleManagement.cpp \
     ../../src/Database/SettingsManagement.cpp \
     ../../src/Database/UserManagement.cpp \
     ../../src/Event.cpp \
     ../../src/EventChangeLogItem.cpp \
+    ../../src/Schedule.cpp \
     ../../src/User.cpp \
     ../../src/UserGroup.cpp \
     ../../src/UserMapping.cpp
