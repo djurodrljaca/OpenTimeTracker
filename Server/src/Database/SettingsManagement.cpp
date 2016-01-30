@@ -88,7 +88,7 @@ bool Database::SettingsManagement::addSettings(const QMap<QString, QVariant> &se
                     int rowsAffected = -1;
                     success = DatabaseManagement::executeSqlCommand(command,
                                                                     values,
-                                                                    NULL,
+                                                                    nullptr,
                                                                     &rowsAffected);
 
                     if (success)
@@ -142,7 +142,10 @@ bool Database::SettingsManagement::changeSetting(const QString &name, const QVar
             values[":value"] = newValue;
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command,
+                                                            values,
+                                                            nullptr,
+                                                            &rowsAffected);
 
             if (success)
             {

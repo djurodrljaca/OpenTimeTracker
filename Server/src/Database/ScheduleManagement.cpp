@@ -199,7 +199,10 @@ bool Database::ScheduleManagement::addWorkingDay(const QDateTime &startTimestamp
             values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command,
+                                                            values,
+                                                            nullptr,
+                                                            &rowsAffected);
 
             if (success)
             {
@@ -235,7 +238,7 @@ bool Database::ScheduleManagement::addSchedule(const qint64 &userId,
             values[":endTimestamp"] = endTimestamp.toUTC().toString(Qt::ISODate);
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command, values, nullptr, &rowsAffected);
 
             if (success)
             {
@@ -268,7 +271,7 @@ bool Database::ScheduleManagement::removeSchedule(const qint64 &scheduleId)
             values[":id"] = scheduleId;
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command, values, nullptr, &rowsAffected);
 
             if (success)
             {

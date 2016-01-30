@@ -163,7 +163,10 @@ bool Database::EventManagement::addEvent(const QDateTime &timestamp,
 
             // Execute the command
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command,
+                                                            values,
+                                                            nullptr,
+                                                            &rowsAffected);
 
             if (success)
             {
@@ -233,7 +236,7 @@ bool Database::EventManagement::changeEventTimestamp(const qint64 &eventId,
                     int rowsAffected = -1;
                     success = DatabaseManagement::executeSqlCommand(command,
                                                                     values,
-                                                                    NULL,
+                                                                    nullptr,
                                                                     &rowsAffected);
 
                     if (success)
@@ -318,7 +321,7 @@ bool Database::EventManagement::changeEventType(const qint64 &eventId,
                     int rowsAffected = -1;
                     success = DatabaseManagement::executeSqlCommand(command,
                                                                     values,
-                                                                    NULL,
+                                                                    nullptr,
                                                                     &rowsAffected);
 
                     if (success)
@@ -403,7 +406,7 @@ bool Database::EventManagement::changeEventEnableState(const qint64 &eventId,
                     int rowsAffected = -1;
                     success = DatabaseManagement::executeSqlCommand(command,
                                                                     values,
-                                                                    NULL,
+                                                                    nullptr,
                                                                     &rowsAffected);
 
                     if (success)

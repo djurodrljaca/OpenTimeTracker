@@ -119,8 +119,8 @@ public:
      */
     static bool executeSqlCommand(const QString &command,
                                   const QMap<QString, QVariant> &values = QMap<QString, QVariant>(),
-                                  QList<QMap<QString, QVariant> > *results = NULL,
-                                  int *rowsAffected = NULL);
+                                  QList<QMap<QString, QVariant> > *results = nullptr,
+                                  int *rowsAffected = nullptr);
 
 private:
     /*!

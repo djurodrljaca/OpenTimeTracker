@@ -1,4 +1,4 @@
-QT += core sql
+QT += core sql network
 QT -= gui
 
 CONFIG += c++11
@@ -22,7 +22,9 @@ SOURCES += src/main.cpp \
     src/Database/SettingsManagement.cpp \
     src/Database/ScheduleManagement.cpp \
     src/Schedule.cpp \
-    src/BreakTimeCalculator.cpp
+    src/BreakTimeCalculator.cpp \
+    src/Server.cpp \
+    src/Client.cpp
 
 HEADERS += \
     src/Event.hpp \
@@ -37,7 +39,9 @@ HEADERS += \
     src/Database/SettingsManagement.hpp \
     src/Database/ScheduleManagement.hpp \
     src/Schedule.hpp \
-    src/BreakTimeCalculator.hpp
+    src/BreakTimeCalculator.hpp \
+    src/Server.hpp \
+    src/Client.hpp
 
 RESOURCES += \
     qrc/database.qrc

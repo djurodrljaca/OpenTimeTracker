@@ -120,9 +120,9 @@ public:
      * \retval  true    Success
      * \retval  false   Error
      *
-     * A user in the database is disabled by setting its password to NULL.
+     * A user in the database is disabled by setting its password to "null".
      *
-     * This method just calls UserManagement::changeUserPassword() with a NULL string as the new
+     * This method just calls UserManagement::changeUserPassword() with a "null" string as the new
      * password.
      *
      * To re-enable a user in the database, just change its password to a non-empty value.

@@ -169,7 +169,7 @@ bool Database::UserManagement::addUser(const QString &name, const QString &passw
             }
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command, values, nullptr, &rowsAffected);
 
             if (success)
             {
@@ -201,7 +201,7 @@ bool Database::UserManagement::addUserGroup(const QString &name)
             values[":name"] = name;
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command, values, nullptr, &rowsAffected);
 
             if (success)
             {
@@ -234,7 +234,10 @@ bool Database::UserManagement::addUserMapping(const qint64 &userGroupId, const q
             values[":userId"] = userId;
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command,
+                                                            values,
+                                                            nullptr,
+                                                            &rowsAffected);
 
             if (success)
             {
@@ -268,7 +271,10 @@ bool Database::UserManagement::changeUserName(const qint64 &userId, const QStrin
             values[":name"] = newName;
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command,
+                                                            values,
+                                                            nullptr,
+                                                            &rowsAffected);
 
             if (success)
             {
@@ -302,7 +308,10 @@ bool Database::UserManagement::changeUserPassword(const qint64 &userId, const QS
             values[":password"] = newPassword;
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command,
+                                                            values,
+                                                            nullptr,
+                                                            &rowsAffected);
 
             if (success)
             {
@@ -342,7 +351,10 @@ bool Database::UserManagement::changeUserGroupName(const qint64 &userGroupId,
             values[":name"] = newName;
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command,
+                                                            values,
+                                                            nullptr,
+                                                            &rowsAffected);
 
             if (success)
             {
@@ -375,7 +387,10 @@ bool Database::UserManagement::removeUserMapping(const qint64 &userMappingId)
             values[":id"] = userMappingId;
 
             int rowsAffected = -1;
-            success = DatabaseManagement::executeSqlCommand(command, values, NULL, &rowsAffected);
+            success = DatabaseManagement::executeSqlCommand(command,
+                                                            values,
+                                                            nullptr,
+                                                            &rowsAffected);
 
             if (success)
             {

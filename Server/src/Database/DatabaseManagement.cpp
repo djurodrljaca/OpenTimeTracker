@@ -251,7 +251,7 @@ bool DatabaseManagement::executeSqlCommand(const QString &command,
             success = query.exec();
 
             // Optionally get results
-            if (results != NULL)
+            if (results != nullptr)
             {
                 // Read the results
                 const QSqlRecord record = query.record();
@@ -272,7 +272,7 @@ bool DatabaseManagement::executeSqlCommand(const QString &command,
             }
 
             // Optionally get affected rows
-            if (rowsAffected != NULL)
+            if (rowsAffected != nullptr)
             {
                 *rowsAffected = query.numRowsAffected();
             }

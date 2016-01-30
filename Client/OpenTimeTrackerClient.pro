@@ -1,11 +1,12 @@
 TEMPLATE = app
 
-QT += qml quick
+QT += qml quick core network
 CONFIG += c++11
 
 SOURCES += \
     src/main.cpp \
-    src/UserInfo.cpp
+    src/UserInfo.cpp \
+    src/Client.cpp
 
 RESOURCES += qml/qml.qrc
 
@@ -16,4 +17,5 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 HEADERS += \
-    src/UserInfo.hpp
+    src/UserInfo.hpp \
+    src/Client.hpp

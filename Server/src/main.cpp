@@ -13,12 +13,64 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QCoreApplication>
-#include <QtDebug>
+#include <QtCore/QCoreApplication>
+#include <QtCore/QtDebug>
+#include "Database/DatabaseManagement.hpp"
+#include "Database/SettingsManagement.hpp"
+#include "Server.hpp"
 
 int main(int argc, char *argv[])
 {
+    using namespace OpenTimeTracker::Server;
+
     QCoreApplication a(argc, argv);
+
+    Server server(a);
+
+    // Open database
+    bool success;
+
+    if (!Database::DatabaseManagement::isConnected())
+    {
+        success = Database::DatabaseManagement::connect("database.db");
+    }
+    else
+    {
+        success = true;
+    }
+
+    // Read connection settings
+    QMap<QString, QVariant> settings;
+
+    if (success)
+    {
+        settings = Database::SettingsManagement::readSettings();
+
+        // Add default settings to the database if necessary
+        if (settings.isEmpty())
+        {
+            settings["port"] = 61234U;
+
+            success = Database::SettingsManagement::addSettings(settings);
+        }
+    }
+
+    // Start server
+    if (success)
+    {
+        success = false;
+
+        if (settings.contains("port"))
+        {
+            const quint32 valuePort = settings["port"].toUInt(&success);
+
+            if (success && (valuePort <= UINT16_MAX))
+            {
+                const quint16 port = static_cast<quint16>(valuePort);
+                success = server.start(port);
+            }
+        }
+    }
 
     return a.exec();
 }
