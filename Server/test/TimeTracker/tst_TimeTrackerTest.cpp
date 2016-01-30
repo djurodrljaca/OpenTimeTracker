@@ -33,15 +33,17 @@ private Q_SLOTS:
     void testCaseNotWorkingFail();
     void testCaseWorking();
     void testCaseWorkingFail();
-    void testCaseOnBreak_data();
     void testCaseOnBreak();
     void testCaseOnBreakFail();
-//    void testCaseFromBreak();
-//    void testCaseFromBreakFail();
-//    void testCaseNormalFlow();
-//    void testCaseNormalFlowDoubleBreak();
-//    void testCaseNormalFlowDoubleAll();
-//    void testCaseResetState();
+    void testCaseFromBreak();
+    void testCaseFromBreakFail();
+    void testCaseNormalFlow();
+    void testCaseNormalFlowDoubleBreak();
+    void testCaseNormalFlowDoubleAll();
+    void testCaseNormalFlowStartEarly();
+    void testCaseNormalFlowFinishLate();
+    void testCaseNormalFlowTooLittleBreak();
+    void testCaseNormalFlowTooMuchBreak();
 };
 
 TimeTrackerTest::TimeTrackerTest()
@@ -66,10 +68,29 @@ void TimeTrackerTest::testCaseValid()
 
     TimeTracker timeTracker;
 
-    timeTracker.setUserId(1LL);
+    // When working day is not started
+    const qint64 userId = 1LL;
+    timeTracker.setUserId(userId);
     QVERIFY(timeTracker.isValid());
 
-    // TODO: check also other parameters?
+    // When working day is started
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
+
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
+
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
+
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
+
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
+    QVERIFY(timeTracker.isValid());
 }
 
 void TimeTrackerTest::testCaseInvalid()
@@ -78,8 +99,12 @@ void TimeTrackerTest::testCaseInvalid()
 
     TimeTracker timeTracker;
 
-    timeTracker.setUserId(0LL);
+    // When working day is not started: Invalid user ID
+    qint64 userId = 0LL;
+    timeTracker.setUserId(userId);
     QVERIFY(!timeTracker.isValid());
+
+    // Other situations are not possible if the rest of the API works correctly!
 }
 
 void TimeTrackerTest::testCaseNotWorking()
@@ -198,17 +223,16 @@ void TimeTrackerTest::testCaseWorking()
 
     QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
 
-    // Start working (1 h before start of workday)
-    const qint32 offset = 60 * 60;
-    QVERIFY(timeTracker.startWorking(startOfWorkday.addSecs(-offset)));
+    // Start working
+    QVERIFY(timeTracker.startWorking(startOfWorkday));
     QCOMPARE(timeTracker.state(), TimeTracker::State_Working);
 
     // Check working and break times (1 h after start of workday)
-    const QDateTime currentTimestamp = startOfWorkday.addSecs(offset);
+    const QDateTime timestamp = startOfWorkday.addSecs(60 * 60);
 
-    const qint32 workingTime = timeTracker.calculateWorkingTime(currentTimestamp);
-    const qint32 breakTime = timeTracker.calculateBreakTime(currentTimestamp);
-    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(currentTimestamp);
+    const qint32 workingTime = timeTracker.calculateWorkingTime(timestamp);
+    const qint32 breakTime = timeTracker.calculateBreakTime(timestamp);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(timestamp);
 
     const qint32 expectedWorkingTime = 60 * 60;
     const qint32 expectedBreakTime = 0;
@@ -271,28 +295,6 @@ void TimeTrackerTest::testCaseWorkingFail()
     QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 }
 
-void TimeTrackerTest::testCaseOnBreak_data()
-{
-    QTest::addColumn<qint32>("expectedWorkingTime");
-    QTest::addColumn<qint32>("expectedBreakTime");
-    QTest::addColumn<qint32>("expectedTotalWorkingTime");
-
-    const qint32 expectedWorkingTime = 60 * 60;
-    const qint32 allowedBreakTime = static_cast<qint32>(expectedWorkingTime * 0.5 / 7.5);
-
-    QTest::newRow("-1") << expectedWorkingTime
-                        << (allowedBreakTime - 1)
-                        << (expectedWorkingTime + allowedBreakTime - 1);
-
-    QTest::newRow("+0") << expectedWorkingTime
-                        << (allowedBreakTime + 0)
-                        << (expectedWorkingTime + allowedBreakTime);
-
-    QTest::newRow("+1") << expectedWorkingTime
-                        << (allowedBreakTime + 1)
-                        << (expectedWorkingTime + allowedBreakTime);
-}
-
 void TimeTrackerTest::testCaseOnBreak()
 {
     using namespace OpenTimeTracker::Server;
@@ -319,27 +321,27 @@ void TimeTrackerTest::testCaseOnBreak()
 
     QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
 
-    // Fetch test data
-    QFETCH(qint32, expectedWorkingTime);
-    QFETCH(qint32, expectedBreakTime);
-    QFETCH(qint32, expectedTotalWorkingTime);
+    // Prepare expected times
+    const qint32 expectedWorkingTime = 60 * 60;
+    const qint32 expectedBreakTime = static_cast<qint32>(expectedWorkingTime * 0.5 / 7.5);
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + expectedBreakTime;
 
-    // Start working (1 h before start of workday)
-    const qint32 offset = 60 * 60;
-    QVERIFY(timeTracker.startWorking(startOfWorkday.addSecs(-offset)));
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
     QCOMPARE(timeTracker.state(), TimeTracker::State_Working);
 
-    // Start break (1 h after start of workday)
-    QVERIFY(timeTracker.startBreak(startOfWorkday.addSecs(expectedWorkingTime)));
+    // Start break
+    timestamp = timestamp.addSecs(expectedWorkingTime);
+    QVERIFY(timeTracker.startBreak(timestamp));
     QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
     // Check working and break times
-    const QDateTime breakTimestamp = startOfWorkday.addSecs(expectedWorkingTime +
-                                                            expectedBreakTime);
+    timestamp = timestamp.addSecs(expectedBreakTime);
 
-    const qint32 workingTime = timeTracker.calculateWorkingTime(breakTimestamp);
-    const qint32 breakTime = timeTracker.calculateBreakTime(breakTimestamp);
-    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(breakTimestamp);
+    const qint32 workingTime = timeTracker.calculateWorkingTime(timestamp);
+    const qint32 breakTime = timeTracker.calculateBreakTime(timestamp);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(timestamp);
 
     QCOMPARE(workingTime, expectedWorkingTime);
     QCOMPARE(breakTime, expectedBreakTime);
@@ -402,244 +404,575 @@ void TimeTrackerTest::testCaseOnBreakFail()
     QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 }
 
-//void TimeTrackerTest::testCaseFromBreak()
-//{
-//    OpenTimeTracker::Server::TimeTracker timeTracker;
-//    timeTracker.setUserId(1LL);
+void TimeTrackerTest::testCaseFromBreak()
+{
+    using namespace OpenTimeTracker::Server;
 
-//    const QDateTime currentTimestamp = QDateTime::currentDateTime();
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
 
-//    // Start working (15 min before current time)
-//    const qint32 offsetWorking = 15 * 60;
-//    const QDateTime timestampWorking = currentTimestamp.addSecs(-offsetWorking);
-//    QVERIFY(timeTracker.startWorking(timestampWorking));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
 
-//    // Start break (10 min before current time)
-//    const qint32 offsetOnBreak = 10 * 60;
-//    const QDateTime timestampOnBreak = currentTimestamp.addSecs(-offsetOnBreak);
-//    QVERIFY(timeTracker.startBreak(timestampOnBreak));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
 
-//    // End break (5 min before current time)
-//    const qint32 offsetFromBreak = 5 * 60;
-//    const QDateTime timestampFromBreak = currentTimestamp.addSecs(-offsetFromBreak);
-//    QVERIFY(timeTracker.endBreak(timestampFromBreak));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
 
-//    // Check working and break times
-//    const qint32 workingTime = timeTracker.workingTime();
-//    const qint32 breakTime = timeTracker.breakTime();
-//    const qint32 workingTimeMin = offsetWorking - offsetOnBreak;
-//    const qint32 workingTimeMax = workingTimeMin +
-//                                  timestampFromBreak.secsTo(QDateTime::currentDateTime());
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
 
-//    QVERIFY(workingTimeMin <= workingTime);
-//    QVERIFY(workingTime <= workingTimeMax);
-//    QCOMPARE(breakTime, (offsetOnBreak - offsetFromBreak));
-//}
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
 
-//void TimeTrackerTest::testCaseFromBreakFail()
-//{
-//    OpenTimeTracker::Server::TimeTracker timeTracker;
-//    timeTracker.setUserId(1LL);
+    // Prepare expected times
+    const qint32 workingTime1 = 60 * 60;
+    const qint32 workingTime2 = 30 * 60;
+    const qint32 expectedWorkingTime = workingTime1 + workingTime2;
+    const qint32 expectedBreakTime = static_cast<qint32>(expectedWorkingTime * 0.5 / 7.5);
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + expectedBreakTime;
 
-//    const QDateTime timestamp = QDateTime::currentDateTime();
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), TimeTracker::State_Working);
 
-//    // Start working (3 min before current time)
-//    const QDateTime timestampWorking = timestamp.addSecs(-180);
-//    QVERIFY(timeTracker.startWorking(timestampWorking));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // Start break
+    timestamp = timestamp.addSecs(workingTime1);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
-//    // Start break (2 min before current time)
-//    const QDateTime timestampOnBreak = timestamp.addSecs(-120);
-//    QVERIFY(timeTracker.startBreak(timestampOnBreak));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+    // End break
+    timestamp = timestamp.addSecs(expectedBreakTime);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//    // End break (1 min before current time)
-//    const QDateTime timestampFromBreak = timestamp.addSecs(-60);
-//    QVERIFY(timeTracker.endBreak(timestampFromBreak));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // Check working and break times
+    timestamp = timestamp.addSecs(workingTime2);
 
-//    // Check for failure
-//    QVERIFY(!timeTracker.startWorking(timestamp));
-//    QVERIFY(!timeTracker.startBreak(QDateTime()));
-//    QVERIFY(!timeTracker.startBreak(timestampFromBreak.addSecs(-1)));
-//    QVERIFY(!timeTracker.endBreak(timestamp));
-//    QVERIFY(!timeTracker.stopWorking(QDateTime()));
-//    QVERIFY(!timeTracker.stopWorking(timestampFromBreak.addSecs(-1)));
+    const qint32 workingTime = timeTracker.calculateWorkingTime(timestamp);
+    const qint32 breakTime = timeTracker.calculateBreakTime(timestamp);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(timestamp);
 
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
-//}
+    QCOMPARE(workingTime, expectedWorkingTime);
+    QCOMPARE(breakTime, expectedBreakTime);
+    QCOMPARE(totalWorkingTime, expectedTotalWorkingTime);
+}
 
-//void TimeTrackerTest::testCaseNormalFlow()
-//{
-//    OpenTimeTracker::Server::TimeTracker timeTracker;
-//    timeTracker.setUserId(1LL);
+void TimeTrackerTest::testCaseFromBreakFail()
+{
+    using namespace OpenTimeTracker::Server;
 
-//    // Start working
-//    QDateTime timestamp = QDateTime::currentDateTime();
-//    QVERIFY(timeTracker.startWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
 
-//    // Start break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.startBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
 
-//    // End break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.endBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
 
-//    // Stop working 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.stopWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
 
-//    // Check cumulative times
-//    QCOMPARE(timeTracker.workingTime(), 10 * 60);
-//    QCOMPARE(timeTracker.breakTime(), 5 * 60);
-//}
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
 
-//void TimeTrackerTest::testCaseNormalFlowDoubleBreak()
-//{
-//    OpenTimeTracker::Server::TimeTracker timeTracker;
-//    timeTracker.setUserId(1LL);
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
 
-//    // Start working
-//    QDateTime timestamp = QDateTime::currentDateTime();
-//    QVERIFY(timeTracker.startWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), TimeTracker::State_Working);
 
-//    // Start break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.startBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+    // Start break (55 min after start of workday)
+    timestamp = timestamp.addSecs(55 * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
-//    // End break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.endBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // End break (1 h after start of workday)
+    timestamp = timestamp.addSecs(60 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//    // Start break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.startBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+    // Check for failure
+    QVERIFY(!timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//    // End break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.endBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    QVERIFY(!timeTracker.startBreak(QDateTime()));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//    // Stop working 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.stopWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+    QVERIFY(!timeTracker.startBreak(timestamp.addSecs(-1)));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//    // Check cumulative times
-//    QCOMPARE(timeTracker.workingTime(), 15 * 60);
-//    QCOMPARE(timeTracker.breakTime(), 10 * 60);
-//}
+    QVERIFY(!timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//void TimeTrackerTest::testCaseNormalFlowDoubleAll()
-//{
-//    OpenTimeTracker::Server::TimeTracker timeTracker;
-//    timeTracker.setUserId(1LL);
+    QVERIFY(!timeTracker.stopWorking(QDateTime()));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//    // First normal flow
+    QVERIFY(!timeTracker.stopWorking(timestamp.addSecs(-1)));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+}
 
-//    // Start working
-//    QDateTime timestamp = QDateTime::currentDateTime();
-//    QVERIFY(timeTracker.startWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+void TimeTrackerTest::testCaseNormalFlow()
+{
+    using namespace OpenTimeTracker::Server;
 
-//    // Start break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.startBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
 
-//    // End break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.endBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
 
-//    // Stop working 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.stopWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
 
-//    // Second normal flow
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
 
-//    // Start working 30 min later
-//    timestamp = timestamp.addSecs(30 * 60);
-//    QVERIFY(timeTracker.startWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
 
-//    // Start break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.startBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
 
-//    // End break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.endBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//    // Stop working 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.stopWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+    // Start break (3.5 hours later)
+    timestamp = timestamp.addSecs((3 * 60 + 30) * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
 
-//    // Check cumulative times
-//    QCOMPARE(timeTracker.workingTime(), 20 * 60);
-//    QCOMPARE(timeTracker.breakTime(), 10 * 60);
-//}
+    // End break (30 min later))
+    timestamp = timestamp.addSecs(30 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
 
-//void TimeTrackerTest::testCaseResetState()
-//{
-//    OpenTimeTracker::Server::TimeTracker timeTracker;
-//    timeTracker.setUserId(1LL);
+    // Stop working (after 8 hours)
+    QVERIFY(timeTracker.stopWorking(endOfWorkday));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
 
-//    // Start working
-//    QDateTime timestamp = QDateTime::currentDateTime();
-//    QVERIFY(timeTracker.startWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // Check working and break times
+    const qint32 workingTime = timeTracker.calculateWorkingTime(endOfWorkday);
+    const qint32 breakTime = timeTracker.calculateBreakTime(endOfWorkday);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(endOfWorkday);
 
-//    // Start break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.startBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+    const qint32 expectedWorkingTime = (7 * 60 + 30) * 60;
+    const qint32 expectedBreakTime = 30 * 60;
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + expectedBreakTime;
 
-//    // End break 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.endBreak(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    QCOMPARE(workingTime, expectedWorkingTime);
+    QCOMPARE(breakTime, expectedBreakTime);
+    QCOMPARE(totalWorkingTime, expectedTotalWorkingTime);
+}
 
-//    // Stop working 5 min later
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.stopWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+void TimeTrackerTest::testCaseNormalFlowDoubleBreak()
+{
+    using namespace OpenTimeTracker::Server;
 
-//    // Check cumulative times
-//    QCOMPARE(timeTracker.workingTime(), 10 * 60);
-//    QCOMPARE(timeTracker.breakTime(), 5 * 60);
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
 
-//    // Start working again (state needs to be something other than "not working")
-//    timestamp = timestamp.addSecs(5 * 60);
-//    QVERIFY(timeTracker.startWorking(timestamp));
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
 
-//    // Reset state
-//    timeTracker.resetState();
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
 
-//    // Check if state was really reset
-//    QVERIFY(timeTracker.isValid());
-//    QCOMPARE(timeTracker.userId(), 1LL);
-//    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
-//    QCOMPARE(timeTracker.workingTime(), 0);
-//    QCOMPARE(timeTracker.breakTime(), 0);
-//}
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
+
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
+
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
+
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break (3 hours later)
+    timestamp = timestamp.addSecs(3 * 60 * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break (25 min later))
+    timestamp = timestamp.addSecs(25 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break (2 hours later)
+    timestamp = timestamp.addSecs(2 * 60 * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break (5 min later))
+    timestamp = timestamp.addSecs(5 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Stop working (after 8 hours)
+    QVERIFY(timeTracker.stopWorking(endOfWorkday));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+
+    // Check working and break times
+    const qint32 workingTime = timeTracker.calculateWorkingTime(endOfWorkday);
+    const qint32 breakTime = timeTracker.calculateBreakTime(endOfWorkday);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(endOfWorkday);
+
+    const qint32 expectedWorkingTime = (7 * 60 + 30) * 60;
+    const qint32 expectedBreakTime = 30 * 60;
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + expectedBreakTime;
+
+    QCOMPARE(workingTime, expectedWorkingTime);
+    QCOMPARE(breakTime, expectedBreakTime);
+    QCOMPARE(totalWorkingTime, expectedTotalWorkingTime);
+}
+
+void TimeTrackerTest::testCaseNormalFlowDoubleAll()
+{
+    using namespace OpenTimeTracker::Server;
+
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
+
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
+
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
+
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
+
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
+
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
+
+    // First normal flow
+
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break (1 hour later)
+    timestamp = timestamp.addSecs(1 * 60 * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break (10 min later))
+    timestamp = timestamp.addSecs(10 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Stop working (1 hour later)
+    timestamp = timestamp.addSecs(1 * 60 * 60);
+    QVERIFY(timeTracker.stopWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+
+    // Second normal flow
+
+    // Start working (1 hour later)
+    timestamp = timestamp.addSecs(1 * 60 * 60);
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break (1 hour later)
+    timestamp = timestamp.addSecs(1 * 60 * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break (5 min later))
+    timestamp = timestamp.addSecs(5 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Stop working (45 min later)
+    timestamp = timestamp.addSecs(45 * 60);
+    QVERIFY(timeTracker.stopWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+
+    // Check working and break times
+    const qint32 workingTime = timeTracker.calculateWorkingTime(endOfWorkday);
+    const qint32 breakTime = timeTracker.calculateBreakTime(endOfWorkday);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(endOfWorkday);
+
+    const qint32 expectedWorkingTime = (3 * 60 + 45) * 60;
+    const qint32 expectedBreakTime = 15 * 60;
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + expectedBreakTime;
+
+    QCOMPARE(workingTime, expectedWorkingTime);
+    QCOMPARE(breakTime, expectedBreakTime);
+    QCOMPARE(totalWorkingTime, expectedTotalWorkingTime);
+}
+
+void TimeTrackerTest::testCaseNormalFlowStartEarly()
+{
+    using namespace OpenTimeTracker::Server;
+
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
+
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
+
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
+
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
+
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
+
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
+
+    // Start working (30 min early)
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp.addSecs(-30 * 60)));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break (3.5 hours later)
+    timestamp = timestamp.addSecs((3 * 60 + 30) * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break (30 min later))
+    timestamp = timestamp.addSecs(30 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Stop working (after 8 hours)
+    QVERIFY(timeTracker.stopWorking(endOfWorkday));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+
+    // Check working and break times
+    const qint32 workingTime = timeTracker.calculateWorkingTime(endOfWorkday);
+    const qint32 breakTime = timeTracker.calculateBreakTime(endOfWorkday);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(endOfWorkday);
+
+    const qint32 expectedWorkingTime = (7 * 60 + 30) * 60;
+    const qint32 expectedBreakTime = 30 * 60;
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + expectedBreakTime;
+
+    QCOMPARE(workingTime, expectedWorkingTime);
+    QCOMPARE(breakTime, expectedBreakTime);
+    QCOMPARE(totalWorkingTime, expectedTotalWorkingTime);
+}
+
+void TimeTrackerTest::testCaseNormalFlowFinishLate()
+{
+    using namespace OpenTimeTracker::Server;
+
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
+
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
+
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
+
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
+
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
+
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
+
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break (3.5 hours later)
+    timestamp = timestamp.addSecs((3 * 60 + 30) * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break (30 min later))
+    timestamp = timestamp.addSecs(30 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Stop working (after 8.5 hours)
+    QVERIFY(timeTracker.stopWorking(endOfWorkday.addSecs(30 * 60)));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+
+    // Check working and break times
+    const qint32 workingTime = timeTracker.calculateWorkingTime(endOfWorkday);
+    const qint32 breakTime = timeTracker.calculateBreakTime(endOfWorkday);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(endOfWorkday);
+
+    const qint32 expectedWorkingTime = (7 * 60 + 30) * 60;
+    const qint32 expectedBreakTime = 30 * 60;
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + expectedBreakTime;
+
+    QCOMPARE(workingTime, expectedWorkingTime);
+    QCOMPARE(breakTime, expectedBreakTime);
+    QCOMPARE(totalWorkingTime, expectedTotalWorkingTime);
+}
+
+void TimeTrackerTest::testCaseNormalFlowTooLittleBreak()
+{
+    using namespace OpenTimeTracker::Server;
+
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
+
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
+
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
+
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
+
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
+
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
+
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break (3.5 hours later)
+    timestamp = timestamp.addSecs((3 * 60 + 30) * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break (20 min later))
+    timestamp = timestamp.addSecs(20 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Stop working (after 8 hours)
+    QVERIFY(timeTracker.stopWorking(endOfWorkday));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+
+    // Check working and break times
+    const qint32 workingTime = timeTracker.calculateWorkingTime(endOfWorkday);
+    const qint32 breakTime = timeTracker.calculateBreakTime(endOfWorkday);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(endOfWorkday);
+
+    const qint32 expectedWorkingTime = (7 * 60 + 40) * 60;
+    const qint32 expectedBreakTime = 20 * 60;
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + expectedBreakTime;
+
+    QCOMPARE(workingTime, expectedWorkingTime);
+    QCOMPARE(breakTime, expectedBreakTime);
+    QCOMPARE(totalWorkingTime, expectedTotalWorkingTime);
+}
+
+void TimeTrackerTest::testCaseNormalFlowTooMuchBreak()
+{
+    using namespace OpenTimeTracker::Server;
+
+    const qint64 userId = 1LL;
+    TimeTracker timeTracker;
+    timeTracker.setUserId(userId);
+
+    // Set a schedule
+    BreakTimeCalculator breakTimeCalculator;
+    QVERIFY(breakTimeCalculator.initialize(7.5, 0.5));
+
+    const QDateTime startOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(8, 00, 00));
+    const QDateTime endOfWorkday = QDateTime(QDate(2016, 01, 16), QTime(16, 00, 00));
+
+    Schedule schedule;
+    schedule.setId(1LL);
+    schedule.setUserId(userId);
+    schedule.setStartTimestamp(startOfWorkday);
+    schedule.setEndTimestamp(endOfWorkday);
+
+    QList<Schedule> scheduleList;
+    scheduleList << schedule;
+
+    QVERIFY(timeTracker.startWorkday(breakTimeCalculator, scheduleList));
+
+    // Start working
+    QDateTime timestamp = startOfWorkday;
+    QVERIFY(timeTracker.startWorking(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Start break (3.5 hours later)
+    timestamp = timestamp.addSecs((3 * 60 + 30) * 60);
+    QVERIFY(timeTracker.startBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_OnBreak);
+
+    // End break (40 min later))
+    timestamp = timestamp.addSecs(40 * 60);
+    QVERIFY(timeTracker.endBreak(timestamp));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_Working);
+
+    // Stop working (after 8 hours)
+    QVERIFY(timeTracker.stopWorking(endOfWorkday));
+    QCOMPARE(timeTracker.state(), OpenTimeTracker::Server::TimeTracker::State_NotWorking);
+
+    // Check working and break times
+    const qint32 workingTime = timeTracker.calculateWorkingTime(endOfWorkday);
+    const qint32 breakTime = timeTracker.calculateBreakTime(endOfWorkday);
+    const qint32 totalWorkingTime = timeTracker.calculateTotalWorkingTime(endOfWorkday);
+
+    const qint32 expectedWorkingTime = (7 * 60 + 20) * 60;
+    const qint32 expectedBreakTime = 40 * 60;
+    const qint32 allowedBreakTime = static_cast<qint32>(expectedWorkingTime * 0.5 / 7.5);
+    const qint32 expectedTotalWorkingTime = expectedWorkingTime + allowedBreakTime;
+
+    QCOMPARE(workingTime, expectedWorkingTime);
+    QCOMPARE(breakTime, expectedBreakTime);
+    QCOMPARE(totalWorkingTime, expectedTotalWorkingTime);
+}
 
 QTEST_APPLESS_MAIN(TimeTrackerTest)
 

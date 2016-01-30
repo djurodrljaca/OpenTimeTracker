@@ -252,8 +252,6 @@ private:
      * \brief   Holds the timestamp of the last event
      */
     QDateTime m_lastEventTimestamp;
-
-    // TODO: update and extend the unit tests!
 };
 
 }
