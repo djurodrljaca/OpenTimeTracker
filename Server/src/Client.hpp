@@ -18,7 +18,7 @@
 
 #include <QtCore/QObject>
 #include <QtNetwork/QTcpSocket>
-#include "PacketParser.hpp"
+#include "PacketHandler.hpp"
 
 namespace OpenTimeTracker
 {
@@ -89,9 +89,9 @@ private:
     QTcpSocket *m_socket;
 
     /*!
-     * \brief   Holds the packet parser
+     * \brief   Holds the packet handler
      */
-    PacketParser m_packetParser;
+    PacketHandler m_packetHandler;
 };
 
 }

@@ -20,7 +20,7 @@ using namespace OpenTimeTracker::Server;
 Client::Client(QObject *parent, QTcpSocket *socket)
     : QObject(parent),
       m_socket(socket),
-      m_packetParser()
+      m_packetHandler()
 {
     connect(m_socket, SIGNAL(disconnected()), this, SLOT(handleDisconnect()));
     connect(m_socket, SIGNAL(readyRead()), this, SLOT(processReceivedData()));
@@ -35,22 +35,22 @@ void Client::handleDisconnect()
 void Client::processReceivedData()
 {
     // Read all available data and add it to the parser
-    m_packetParser.addData(m_socket->readAll());
+    m_packetHandler.addData(m_socket->readAll());
 
     // Extract packets with the packet parser
-    PacketParser::Result result = PacketParser::Result_Error;
+    PacketHandler::Result result = PacketHandler::Result_Error;
 
     do
     {
         // Parse received data
-        result = m_packetParser.parse();
+        result = m_packetHandler.read();
 
         switch (result)
         {
-            case PacketParser::Result_Success:
+            case PacketHandler::Result_Success:
             {
                 // Process received packet
-                const bool success = processReceivedPacket(m_packetParser.takePacketPayload());
+                const bool success = processReceivedPacket(m_packetHandler.takePacket());
 
                 if (!success)
                 {
@@ -61,13 +61,13 @@ void Client::processReceivedData()
                 break;
             }
 
-            case PacketParser::Result_NeedMoreData:
+            case PacketHandler::Result_NeedMoreData:
             {
                 // More data is needed
                 break;
             }
 
-            case PacketParser::Result_Error:
+            case PacketHandler::Result_Error:
             default:
             {
                 // Error occurred, terminate the connection
@@ -77,7 +77,7 @@ void Client::processReceivedData()
         }
     }
     // Continue parsing until either an error occurs or more data is needed
-    while (result == PacketParser::Result_Success);
+    while (result == PacketHandler::Result_Success);
 }
 
 bool Client::sendPacket(const QString &packetPayload)
@@ -87,7 +87,7 @@ bool Client::sendPacket(const QString &packetPayload)
     if (m_socket->isOpen())
     {
         // Write packet
-        const QByteArray rawPacketData = PacketParser::toRawPacketData(packetPayload);
+        const QByteArray rawPacketData = PacketHandler::toByteArray(packetPayload);
         const qint64 bytesWritten = m_socket->write(rawPacketData);
 
         if (bytesWritten == rawPacketData.size())
