@@ -19,10 +19,25 @@
 
 using namespace OpenTimeTracker::Server;
 
+quint32 PacketHandler::m_nextPacketId = 0U;
+
 PacketHandler::PacketHandler()
     : m_dataBuffer(),
-      m_readPacket(nullptr)
+      m_readPacket(nullptr),
+      m_registeredPacketReaders(),
+      m_registeredPacketWriters()
 {
+}
+
+PacketHandler::~PacketHandler()
+{
+    // Remove all registered readers
+    qDeleteAll(m_registeredPacketReaders);
+    m_registeredPacketReaders.clear();
+
+    // Remove all registered writers
+    qDeleteAll(m_registeredPacketWriters);
+    m_registeredPacketWriters.clear();
 }
 
 void PacketHandler::addData(const QByteArray &data)
@@ -110,13 +125,102 @@ Packets::Packet *PacketHandler::takePacket()
 
 QByteArray PacketHandler::toByteArray(const Packets::Packet &packet)
 {
-    // Prepare packet (format: <STX>[packet payload in UTF-8]<ETX>)
-    QByteArray packet;
-    packet.append('\x02');
-    packet.append(packet.toUtf8());
-    packet.append('\x03');
+    // Prepare packet
+    QByteArray packetData;
 
-    return packet;
+    // Find a matching packet writer and write the packet
+    const QString type = packet.type();
+
+    if (!type.isEmpty())
+    {
+        foreach (Packets::PacketWriter *registeredWriter, m_registeredPacketWriters)
+        {
+            if (registeredWriter->packetType() == type)
+            {
+                // Matching writer found, write the packet
+                packetData = registeredWriter->toByteArray(packet);
+                break;
+            }
+        }
+    }
+    return packetData;
+}
+
+bool PacketHandler::registerPacketReader(Packets::PacketReader *reader)
+{
+    bool success = false;
+
+    // Check input parameters
+    if (reader != nullptr)
+    {
+        if (!reader->packetType().isEmpty())
+        {
+            success = true;
+        }
+    }
+
+    // Check if a reader for the same packet type is already registered
+    if (success)
+    {
+        foreach (Packets::PacketReader *registeredReader, m_registeredPacketReaders)
+        {
+            if (reader->packetType() == registeredReader->packetType())
+            {
+                // Error, reader for the same packet type is already registered
+                success = false;
+                break;
+            }
+        }
+    }
+
+    // Register reader
+    if (success)
+    {
+        m_registeredPacketReaders.append(reader);
+    }
+
+    return success;
+}
+
+bool PacketHandler::registerPacketWriter(Packets::PacketWriter *writer)
+{
+    bool success = false;
+
+    // Check input parameters
+    if (writer != nullptr)
+    {
+        if (!writer->packetType().isEmpty())
+        {
+            success = true;
+        }
+    }
+
+    // Check if a writer for the same packet type is already registered
+    if (success)
+    {
+        foreach (Packets::PacketWriter *registeredWriter, m_registeredPacketWriters)
+        {
+            if (writer->packetType() == registeredWriter->packetType())
+            {
+                // Error, writer for the same packet type is already registered
+                success = false;
+                break;
+            }
+        }
+    }
+
+    // Register writer
+    if (success)
+    {
+        m_registeredPacketWriters.append(writer);
+    }
+
+    return success;
+}
+
+quint32 PacketHandler::createPacketId()
+{
+    return m_nextPacketId++;
 }
 
 Packets::Packet *PacketHandler::fromPacketPayload(const QByteArray &packetPayload) const
@@ -128,14 +232,14 @@ Packets::Packet *PacketHandler::fromPacketPayload(const QByteArray &packetPayloa
 
     if (document.isObject())
     {
-        QJsonObject object = document.object();
+        QJsonObject packetObject = document.object();
 
         // Read packet type
         QString type;
 
-        if (object.contains("type"))
+        if (packetObject.contains("type"))
         {
-            const QJsonValue value = object["type"];
+            const QJsonValue value = packetObject["type"];
 
             if (value.isString())
             {
@@ -143,11 +247,20 @@ Packets::Packet *PacketHandler::fromPacketPayload(const QByteArray &packetPayloa
             }
         }
 
-        // TODO: implement
+        // Find a matching packet reader and read the packet
+        if (!type.isEmpty())
+        {
+            foreach (Packets::PacketReader *registeredReader, m_registeredPacketReaders)
+            {
+                if (registeredReader->packetType() == type)
+                {
+                    // Matching reader found, read the packet
+                    packet = registeredReader->fromPacketObject(packetObject);
+                    break;
+                }
+            }
+        }
     }
 
-
-
-    // TODO: implement
     return packet;
 }

@@ -27,7 +27,8 @@ SOURCES += src/main.cpp \
     src/Client.cpp \
     src/Packets/Packet.cpp \
     src/PacketHandler.cpp \
-    src/Packets/PacketReader.cpp
+    src/Packets/PacketReader.cpp \
+    src/Packets/PacketWriter.cpp
 
 HEADERS += \
     src/Event.hpp \
@@ -47,7 +48,8 @@ HEADERS += \
     src/Client.hpp \
     src/Packets/Packet.hpp \
     src/PacketHandler.hpp \
-    src/Packets/PacketReader.hpp
+    src/Packets/PacketReader.hpp \
+    src/Packets/PacketWriter.hpp
 
 RESOURCES += \
     qrc/database.qrc

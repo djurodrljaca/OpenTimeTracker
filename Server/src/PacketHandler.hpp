@@ -18,7 +18,10 @@
 
 #include <QtCore/QByteArray>
 #include <QtCore/QScopedPointer>
+#include <QtCore/QList>
 #include "Packets/Packet.hpp"
+#include "Packets/PacketReader.hpp"
+#include "Packets/PacketWriter.hpp"
 
 namespace OpenTimeTracker
 {
@@ -62,6 +65,11 @@ public:
     PacketHandler();
 
     /*!
+     * \brief   Destructor
+     */
+    ~PacketHandler();
+
+    /*!
      * \brief   Adds data to the data buffer
      *
      * \param   data    New data to add to the data buffer
@@ -92,7 +100,37 @@ public:
      * \retval  true    Success
      * \retval  false   Error
      */
-    static QByteArray toByteArray(const Packets::Packet &packet);
+    QByteArray toByteArray(const Packets::Packet &packet);
+
+    /*!
+     * \brief   Registers the packet reader
+     *
+     * \param   reader  Packet reader
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool registerPacketReader(Packets::PacketReader *reader);
+
+    /*!
+     * \brief   Registers the packet writer
+     *
+     * \param   writer  Packet writer
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool registerPacketWriter(Packets::PacketWriter *writer);
+
+    /*!
+     * \brief   Creates a packet ID
+     *
+     * \return  Packet ID
+     *
+     * This method shall be used for generation of packet IDs. Every time this method is called a
+     * new packet ID is generated.
+     */
+    static quint32 createPacketId();
 
 private:
     /*!
@@ -114,7 +152,20 @@ private:
      */
     QScopedPointer<Packets::Packet> m_readPacket;
 
-    // TODO: create packet ID generator (static data members + static methods)
+    /*!
+     * \brief   Holds registered packet readers
+     */
+    QList<Packets::PacketReader *> m_registeredPacketReaders;
+
+    /*!
+     * \brief   Holds registered packet writers
+     */
+    QList<Packets::PacketWriter *> m_registeredPacketWriters;
+
+    /*!
+     * \brief   Holds the next packet ID
+     */
+    static quint32 m_nextPacketId;
 };
 
 }

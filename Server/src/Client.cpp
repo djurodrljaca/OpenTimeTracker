@@ -50,7 +50,13 @@ void Client::processReceivedData()
             case PacketHandler::Result_Success:
             {
                 // Process received packet
-                const bool success = processReceivedPacket(m_packetHandler.takePacket());
+                bool success = false;
+                const QScopedPointer<Packets::Packet> packet(m_packetHandler.takePacket());
+
+                if (!packet.isNull())
+                {
+                    success = processReceivedPacket(*packet);
+                }
 
                 if (!success)
                 {
@@ -80,17 +86,17 @@ void Client::processReceivedData()
     while (result == PacketHandler::Result_Success);
 }
 
-bool Client::sendPacket(const QString &packetPayload)
+bool Client::sendPacket(const Packets::Packet &packet)
 {
     bool success = false;
 
     if (m_socket->isOpen())
     {
         // Write packet
-        const QByteArray rawPacketData = PacketHandler::toByteArray(packetPayload);
-        const qint64 bytesWritten = m_socket->write(rawPacketData);
+        const QByteArray packetData = m_packetHandler.toByteArray(packet);
+        const qint64 bytesWritten = m_socket->write(packetData);
 
-        if (bytesWritten == rawPacketData.size())
+        if (bytesWritten == packetData.size())
         {
             success = true;
         }
@@ -99,7 +105,7 @@ bool Client::sendPacket(const QString &packetPayload)
     return success;
 }
 
-bool Client::processReceivedPacket(const QString &packetPayload)
+bool Client::processReceivedPacket(const Packets::Packet &packet)
 {
     bool success = false;
 

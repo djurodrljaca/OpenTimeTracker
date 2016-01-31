@@ -25,7 +25,7 @@ PacketReader::~PacketReader()
 {
 }
 
-Packet *PacketReader::convert(const QJsonObject &packetObject) const
+Packet *PacketReader::fromPacketObject(const QJsonObject &packetObject) const
 {
     Packet *packet = nullptr;
     bool success = false;
@@ -85,9 +85,9 @@ bool PacketReader::readHeader(const QJsonObject &packetObject, Packet *packet) c
     {
         success = false;
 
-        if (object.contains("type"))
+        if (packetObject.contains("type"))
         {
-            const QJsonValue value = object["type"];
+            const QJsonValue value = packetObject["type"];
 
             if (value.isString())
             {
@@ -106,9 +106,9 @@ bool PacketReader::readHeader(const QJsonObject &packetObject, Packet *packet) c
     {
         success = false;
 
-        if (object.contains("id"))
+        if (packetObject.contains("id"))
         {
-            const QJsonValue value = object["id"];
+            const QJsonValue value = packetObject["id"];
 
             if (value.isDouble())
             {

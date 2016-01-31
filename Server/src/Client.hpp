@@ -19,6 +19,7 @@
 #include <QtCore/QObject>
 #include <QtNetwork/QTcpSocket>
 #include "PacketHandler.hpp"
+#include "Packets/Packet.hpp"
 
 namespace OpenTimeTracker
 {
@@ -66,22 +67,22 @@ private:
     /*!
      * \brief   Sends packet to the server
      *
-     * \param   packetPayload   Packet payload
+     * \param   packet  Packet object
      *
      * \retval  true    Success
      * \retval  false   Error
      */
-    bool sendPacket(const QString &packetPayload);
+    bool sendPacket(const Packets::Packet &packet);
 
     /*!
      * \brief   Processes received packet
      *
-     * \param   packetPayload   Packet payload
+     * \param   packet  Packet object
      *
      * \retval  true    Success
      * \retval  false   Error
      */
-    bool processReceivedPacket(const QString &packetPayload);
+    bool processReceivedPacket(const Packets::Packet &packet);
 
     /*!
      * \brief   Holds the TCP socket
