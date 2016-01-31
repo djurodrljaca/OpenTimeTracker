@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
 {
     using namespace OpenTimeTracker::Server;
 
-    QCoreApplication a(argc, argv);
+    QCoreApplication app(argc, argv);
 
-    Server server(a);
+    Server server(&app);
 
     // Open database
     bool success;
@@ -72,5 +72,5 @@ int main(int argc, char *argv[])
         }
     }
 
-    return a.exec();
+    return app.exec();
 }

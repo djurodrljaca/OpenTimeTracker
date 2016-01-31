@@ -126,7 +126,15 @@ void ServerTest::testCaseStartFail()
 
 void ServerTest::testCaseClientConnect()
 {
-    // TODO: implement
+    using namespace OpenTimeTracker::Server;
+
+    // Start server
+    Server server;
+
+    QVERIFY(server.start(m_port));
+    QVERIFY(server.isStarted());
+
+    // TODO: make a socket and connect? make a test client?
 }
 
 // *************************************************************************************************

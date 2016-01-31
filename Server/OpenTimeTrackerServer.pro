@@ -24,7 +24,8 @@ SOURCES += src/main.cpp \
     src/Schedule.cpp \
     src/BreakTimeCalculator.cpp \
     src/Server.cpp \
-    src/Client.cpp
+    src/Client.cpp \
+    src/PacketParser.cpp
 
 HEADERS += \
     src/Event.hpp \
@@ -41,7 +42,8 @@ HEADERS += \
     src/Schedule.hpp \
     src/BreakTimeCalculator.hpp \
     src/Server.hpp \
-    src/Client.hpp
+    src/Client.hpp \
+    src/PacketParser.hpp
 
 RESOURCES += \
     qrc/database.qrc

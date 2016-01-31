@@ -18,6 +18,7 @@
 
 #include <QtCore/QObject>
 #include <QtNetwork/QTcpSocket>
+#include "PacketParser.hpp"
 
 namespace OpenTimeTracker
 {
@@ -56,11 +57,41 @@ private slots:
      */
     void handleDisconnect();
 
+    /*!
+     * \brief   Processes received data
+     */
+    void processReceivedData();
+
 private:
+    /*!
+     * \brief   Sends packet to the server
+     *
+     * \param   packetPayload   Packet payload
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool sendPacket(const QString &packetPayload);
+
+    /*!
+     * \brief   Processes received packet
+     *
+     * \param   packetPayload   Packet payload
+     *
+     * \retval  true    Success
+     * \retval  false   Error
+     */
+    bool processReceivedPacket(const QString &packetPayload);
+
     /*!
      * \brief   Holds the TCP socket
      */
     QTcpSocket *m_socket;
+
+    /*!
+     * \brief   Holds the packet parser
+     */
+    PacketParser m_packetParser;
 };
 
 }
