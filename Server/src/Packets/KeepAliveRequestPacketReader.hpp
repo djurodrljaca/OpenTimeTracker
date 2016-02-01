@@ -13,11 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENTIMETRACKER_SERVER_PACKETS_PACKETREADER_HPP
-#define OPENTIMETRACKER_SERVER_PACKETS_PACKETREADER_HPP
+#ifndef OPENTIMETRACKER_SERVER_PACKETS_KEEPALIVEREQUESTPACKETREADER_HPP
+#define OPENTIMETRACKER_SERVER_PACKETS_KEEPALIVEREQUESTPACKETREADER_HPP
 
-#include <QtCore/QJsonObject>
-#include "Packet.hpp"
+#include "PacketReader.hpp"
 
 namespace OpenTimeTracker
 {
@@ -27,44 +26,35 @@ namespace Packets
 {
 
 /*!
- * \brief   Abstraction of a packet reader
+ * \brief   Packet reader for Keep Alive Request packet
  */
-class PacketReader
+class KeepAliveRequestPacketReader : public PacketReader
 {
 public:
     /*!
      * \brief   Constructor
      */
-    PacketReader();
+    KeepAliveRequestPacketReader();
 
     /*!
      * \brief   Destructor
      */
-    virtual ~PacketReader() = 0;
+    virtual ~KeepAliveRequestPacketReader();
 
     /*!
      * \brief   Gets packet type that can be read by this class
      *
      * \return  Packet type
      */
-    virtual QString packetType() const = 0;
+    virtual QString packetType() const;
 
-    /*!
-     * \brief   Converts packet JSON object into a packet
-     *
-     * \param   packetObject    Packet JSON object
-     *
-     * \return  Packet or nullptr
-     */
-    Packet *fromPacketObject(const QJsonObject &packetObject) const;
-
-protected:
+private:
     /*!
      * \brief   Creates an empty packet object
      *
      * \return  Empty packet object
      */
-    virtual Packet *createPacket() const = 0;
+    virtual Packet *createPacket() const;
 
     /*!
      * \brief   Reads packet body from the packet JSON object
@@ -75,23 +65,11 @@ protected:
      * \retval  true    Success
      * \retval  false   Error
      */
-    virtual bool readBody(const QJsonObject &packetObject, Packet *packet) const = 0;
-
-private:
-    /*!
-     * \brief   Reads packet header from the packet JSON object
-     *
-     * \param       packetObject    Packet JSON object
-     * \param[out]  packet          Packet that whose header is being read
-     *
-     * \retval  true    Success
-     * \retval  false   Error
-     */
-    bool readHeader(const QJsonObject &packetObject, Packet *packet) const;
+    virtual bool readBody(const QJsonObject &packetObject, Packet *packet) const;
 };
 
 }
 }
 }
 
-#endif // OPENTIMETRACKER_SERVER_PACKETS_PACKETREADER_HPP
+#endif // OPENTIMETRACKER_SERVER_PACKETS_KEEPALIVEREQUESTPACKETREADER_HPP

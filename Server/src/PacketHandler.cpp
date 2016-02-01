@@ -19,7 +19,7 @@
 
 using namespace OpenTimeTracker::Server;
 
-quint32 PacketHandler::m_nextPacketId = 0U;
+quint32 PacketHandler::m_nextPacketId = 1U;
 
 PacketHandler::PacketHandler()
     : m_dataBuffer(),

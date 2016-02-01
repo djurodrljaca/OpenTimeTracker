@@ -28,7 +28,13 @@ SOURCES += src/main.cpp \
     src/Packets/Packet.cpp \
     src/PacketHandler.cpp \
     src/Packets/PacketReader.cpp \
-    src/Packets/PacketWriter.cpp
+    src/Packets/PacketWriter.cpp \
+    src/Packets/KeepAliveRequestPacket.cpp \
+    src/Packets/KeepAliveResponsePacket.cpp \
+    src/Packets/KeepAliveRequestPacketReader.cpp \
+    src/Packets/KeepAliveResponsePacketReader.cpp \
+    src/Packets/KeepAliveRequestPacketWriter.cpp \
+    src/Packets/KeepAliveResponsePacketWriter.cpp
 
 HEADERS += \
     src/Event.hpp \
@@ -49,7 +55,13 @@ HEADERS += \
     src/Packets/Packet.hpp \
     src/PacketHandler.hpp \
     src/Packets/PacketReader.hpp \
-    src/Packets/PacketWriter.hpp
+    src/Packets/PacketWriter.hpp \
+    src/Packets/KeepAliveRequestPacket.hpp \
+    src/Packets/KeepAliveResponsePacket.hpp \
+    src/Packets/KeepAliveRequestPacketReader.hpp \
+    src/Packets/KeepAliveResponsePacketReader.hpp \
+    src/Packets/KeepAliveRequestPacketWriter.hpp \
+    src/Packets/KeepAliveResponsePacketWriter.hpp
 
 RESOURCES += \
     qrc/database.qrc

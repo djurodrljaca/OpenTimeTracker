@@ -14,6 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Client.hpp"
+#include "PacketHandler.hpp"
+#include "Packets/KeepAliveRequestPacket.hpp"
+#include "Packets/KeepAliveRequestPacketReader.hpp"
+#include "Packets/KeepAliveRequestPacketWriter.hpp"
+#include "Packets/KeepAliveResponsePacket.hpp"
+#include "Packets/KeepAliveResponsePacketReader.hpp"
+#include "Packets/KeepAliveResponsePacketWriter.hpp"
 
 using namespace OpenTimeTracker::Server;
 
@@ -22,6 +29,15 @@ Client::Client(QObject *parent, QTcpSocket *socket)
       m_socket(socket),
       m_packetHandler()
 {
+    // Register packet readers
+    m_packetHandler.registerPacketReader(new Packets::KeepAliveRequestPacketReader());
+    m_packetHandler.registerPacketReader(new Packets::KeepAliveResponsePacketReader());
+
+    // Register packet writers
+    m_packetHandler.registerPacketWriter(new Packets::KeepAliveRequestPacketWriter());
+    m_packetHandler.registerPacketWriter(new Packets::KeepAliveResponsePacketWriter());
+
+    // Connect needed signals and slots
     connect(m_socket, SIGNAL(disconnected()), this, SLOT(handleDisconnect()));
     connect(m_socket, SIGNAL(readyRead()), this, SLOT(processReceivedData()));
 }
@@ -109,7 +125,24 @@ bool Client::processReceivedPacket(const Packets::Packet &packet)
 {
     bool success = false;
 
-    // TODO: implement!
+    // Check the packet type
+    if (packet.type() == Packets::KeepAliveRequestPacket::staticType())
+    {
+        // Downcast to derived class
+        const Packets::KeepAliveRequestPacket *requestPacket =
+                dynamic_cast<const Packets::KeepAliveRequestPacket *>(&packet);
+
+        if (requestPacket != nullptr)
+        {
+            // Prepare packet
+            Packets::KeepAliveResponsePacket responsePacket;
+            responsePacket.setId(PacketHandler::createPacketId());
+            responsePacket.setReferenceId(requestPacket->id());
+
+            // Send packet
+            success = sendPacket(responsePacket);
+        }
+    }
 
     return success;
 }
